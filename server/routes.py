@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Body
 from fastapi.encoders import jsonable_encoder
-from server.model import RangeSchema
 from server.calc_module import get_range_data_from_symbol
 
 router = APIRouter()

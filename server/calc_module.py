@@ -2,9 +2,6 @@ import sys
 import math
 from datetime import datetime, timedelta
 from wallstreet import Call, Put, Stock
-from scipy.stats import norm
-import pandas as pd
-import numpy as np
 
 def get_expiries_bracket(ticker, num_of_days):
     c = Call(ticker)
