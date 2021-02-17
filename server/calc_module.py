@@ -205,7 +205,17 @@ def get_normalized_probability_move(symbol:str, n_days:int, sigma_fraction_to_us
     my_tuple = get_atm_ivol(Stock(symbol), my_n_days)
     my_percent = my_tuple[1]*100*sigma_fraction_to_use
     my_delta = get_delta(symbol, my_percent, expiry_to_use)
-    return {"move_percent":my_percent, 'expiry':expiry_to_use, "prob_down":my_delta['delta_down'],"prob_up":my_delta['delta_up']}
+    prob_down = my_delta['delta_down']
+    prob_up = my_delta['delta_up']
+    norm_prob_down = 0
+    norm_prob_up = 0
+    if prob_up > prob_down:
+        norm_prob_down = 0.5
+        norm_prob_up = prob_up*0.5/prob_down
+    else:
+        norm_prob_up = 0.5
+        norm_prob_down = prob_down*0.5/prob_up
+    return {"move_percent":my_percent, 'expiry':expiry_to_use, "prob_down":prob_down,"norm_prob_down":norm_prob_down,"prob_up":prob_up, "norm_prob_up":norm_prob_up}
 
 
 def get_best_put_trades(ticker, num_of_days):
