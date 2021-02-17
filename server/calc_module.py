@@ -53,6 +53,7 @@ def get_delta(symbol:str, percent_move:float, expiry:str):
     down_px = s.price*(1-percent_move/100)
     call = Call(symbol,d=int(expiry[0:2]),m=int(expiry[3:5]),y=int(expiry[6:10]))
     up_delta_dict = get_strike_bracket(call, up_px)
+
     call.set_strike(up_delta_dict['lower_strike'])
     delta1 = call.delta()*up_delta_dict['lower_weight']
     call.set_strike(up_delta_dict['higher_strike'])
@@ -62,9 +63,9 @@ def get_delta(symbol:str, percent_move:float, expiry:str):
     put = Put(symbol,d=int(expiry[0:2]),m=int(expiry[3:5]),y=int(expiry[6:10]))
     down_delta_dict = get_strike_bracket(put, down_px)
     put.set_strike(down_delta_dict['lower_strike'])
-    delta1 = call.delta()*down_delta_dict['lower_weight']
+    delta1 = -put.delta()*down_delta_dict['lower_weight']
     put.set_strike(down_delta_dict['higher_strike'])
-    delta2 = call.delta()*(1-down_delta_dict['lower_weight'])
+    delta2 = -put.delta()*(1-down_delta_dict['lower_weight'])
     delta_down_move = delta1 + delta2
     return {'delta_up':delta_up_move,'delta_down':delta_down_move}
 
