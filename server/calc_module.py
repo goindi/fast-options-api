@@ -109,7 +109,7 @@ def calculate_bollingers(s, ndays = 20, sigma = 2):
 def kelly_fraction(win_prob : float, win_loss_ratio:float)->float:
     return win_prob - (1-win_prob)/win_loss_ratio
 
-def get_best_call_spread(ticker, num_of_days):
+def get_best_call_trades(ticker, num_of_days):
     c = Call(ticker)
     range_dict = get_range_data_from_symbol(ticker, num_of_days)
     curr_date = str(datetime.date(datetime.now()))
@@ -128,14 +128,73 @@ def get_best_call_spread(ticker, num_of_days):
         if i >= range_dict["high_range"] and counter < 15:
             counter = counter+1
             c.set_strike(i)
-            spread_list.append({'strike':i,'bid':c.bid,'ask':c.ask})
-    max_premium = 0
+            spread_list.append({'strike':i,'bid':c.bid,'ask':c.ask,'delta':c.delta()})
+    max_amt = 0
+    max_call_amt = 0
     best_spread = {}
+    best_call_written = {}
+
     for i in spread_list:
+        print(i)
+        #for call
+        prob_winning_call = 1 - i['delta']
+        premium_call = i['bid']
+        call_win_amt = premium_call*prob_winning_call
+        if call_win_amt > max_call_amt:
+            max_call_amt = call_win_amt
+            best_call_written = i
         for j in spread_list:
             if i['strike'] < j['strike']:
-                premium = (i['ask']-j['bid'])/(j['strike']-i['strike'])
-                if premium > max_premium:
-                    max_premium = premium
-                    best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['ask'], 'premium_paid':j['bid']}
-    return best_spread
+                #for spread
+                premium_per_dollar = (i['bid']-j['ask'])/(j['strike']-i['strike'])
+                prob_winning_spread = 1 - j['delta']
+                win_amt = premium_per_dollar*prob_winning_spread
+                if win_amt > max_amt:
+                    max_amt = win_amt
+                    best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask']}
+    return {'best_spread':best_spread,'best_call':best_call_written}
+
+def get_best_put_trades(ticker, num_of_days):
+    p = Put(ticker)
+    range_dict = get_range_data_from_symbol(ticker, num_of_days)
+    curr_date = str(datetime.date(datetime.now()))
+    expiries = p.expirations
+    expiry_to_use = expiries[0]
+    for i in expiries:
+        days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
+        expiry_to_use = i
+        if days_to_exp >= num_of_days:
+            break
+    p = Put(ticker,d=int(expiry_to_use[0:2]),m=int(expiry_to_use[3:5]),y=int(expiry_to_use[6:10]))
+    counter = 0
+    spread_list = []
+    strikes = p.strikes
+    for i in strikes:
+        if i <= range_dict["high_range"] and counter < 15:
+            counter = counter+1
+            p.set_strike(i)
+            spread_list.append({'strike':i,'bid':p.bid,'ask':p.ask,'delta':-p.delta()})
+    max_amt = 0
+    max_put_amt = 0
+    best_spread = {}
+    best_put_written = {}
+    spread_list.reverse()
+    for i in spread_list:
+        print(i)
+        #for call
+        prob_winning_put = 1 - i['delta']
+        premium_put = i['bid']
+        put_win_amt = premium_put*prob_winning_put
+        if put_win_amt > max_put_amt:
+            max_put_amt = put_win_amt
+            best_put_written = i
+        for j in spread_list:
+            if i['strike'] > j['strike']:
+                #for spread
+                premium_per_dollar = (i['bid']-j['ask'])/abs(j['strike']-i['strike'])
+                prob_winning_spread = 1 - j['delta']
+                win_amt = premium_per_dollar*prob_winning_spread
+                if win_amt > max_amt:
+                    max_amt = win_amt
+                    best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask']}
+    return {'best_spread':best_spread,'best_put':best_put_written}
