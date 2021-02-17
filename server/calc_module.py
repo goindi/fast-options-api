@@ -53,7 +53,6 @@ def get_delta(symbol:str, percent_move:float, expiry:str):
     down_px = s.price*(1-percent_move/100)
     call = Call(symbol,d=int(expiry[0:2]),m=int(expiry[3:5]),y=int(expiry[6:10]))
     up_delta_dict = get_strike_bracket(call, up_px)
-
     call.set_strike(up_delta_dict['lower_strike'])
     delta1 = call.delta()*up_delta_dict['lower_weight']
     call.set_strike(up_delta_dict['higher_strike'])
@@ -190,6 +189,24 @@ def get_probability_move(symbol:str, n_days:int, percent:float):
             break
     my_delta = get_delta(symbol, percent, expiry_to_use)
     return {"move_percent":percent, 'expiry':expiry_to_use, "prob_down":my_delta['delta_down'],"prob_up":my_delta['delta_up'] }
+
+def get_normalized_probability_move(symbol:str, n_days:int, sigma_fraction_to_use:float):
+    c = Call(symbol)
+    curr_date = str(datetime.date(datetime.now()))
+    expiries = c.expirations
+    expiry_to_use = expiries[0]
+    my_n_days = 0
+    for i in expiries:
+        days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
+        expiry_to_use = i
+        my_n_days = days_to_exp
+        if days_to_exp >= n_days:
+            break
+    my_tuple = get_atm_ivol(Stock(symbol), my_n_days)
+    my_percent = my_tuple[1]*100*sigma_fraction_to_use
+    my_delta = get_delta(symbol, my_percent, expiry_to_use)
+    return {"move_percent":my_percent, 'expiry':expiry_to_use, "prob_down":my_delta['delta_down'],"prob_up":my_delta['delta_up']}
+
 
 def get_best_put_trades(ticker, num_of_days):
     p = Put(ticker)
