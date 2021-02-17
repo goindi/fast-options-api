@@ -21,7 +21,7 @@ def get_expiries_bracket(ticker, num_of_days):
         elif days_to_exp >= num_of_days:
             longer_day_bound = days_to_exp
             longer_expiry = i
-            break;
+            break
     shorter_weight = 1;
     if longer_day_bound != shorter_day_bound:
         shorter_weight = (longer_day_bound - num_of_days) / (longer_day_bound - shorter_day_bound)
@@ -95,9 +95,7 @@ def calculate_bollingers(s, ndays = 20, sigma = 2):
     #Need to update it intraday. Pushing the problem out for later
     #tp is Typical Price. A way to capture high and low (volatility)
     days_back=(ndays*2+10)/0.7 #need trading  days so 0.7
-
     df = s.historical(days_back=days_back, frequency='d')
-
     df['typical_price'] = (x['High']+x['Low']+x['Close'])/3
     df['SMA_close'] =  x['Adj Close'].rolling(window=ndays).mean()
     df['SMA_tp'] =  x['typical_price'].rolling(window=ndays).mean()
@@ -107,3 +105,37 @@ def calculate_bollingers(s, ndays = 20, sigma = 2):
     df['bol_down_close'] = df['SMA_close'] - sigma*df['std_close']
     df['bol_up_tp'] = df['SMA_tp'] + sigma*df['std_tp']
     df['bol_down_tp'] = df['SMA_tp'] - sigma*df['std_tp']
+
+def kelly_fraction(win_prob : float, win_loss_ratio:float)->float:
+    return win_prob - (1-win_prob)/win_loss_ratio
+
+def get_best_call_spread(ticker, num_of_days):
+    c = Call(ticker)
+    range_dict = get_range_data_from_symbol(ticker, num_of_days)
+    curr_date = str(datetime.date(datetime.now()))
+    expiries = c.expirations
+    expiry_to_use = expiries[0]
+    for i in expiries:
+        days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
+        expiry_to_use = i
+        if days_to_exp >= num_of_days:
+            break
+    c = Call(ticker,d=int(expiry_to_use[0:2]),m=int(expiry_to_use[3:5]),y=int(expiry_to_use[6:10]))
+    counter = 0
+    spread_list = []
+    strikes = c.strikes
+    for i in strikes:
+        if i >= range_dict["high_range"] and counter < 15:
+            counter = counter+1
+            c.set_strike(i)
+            spread_list.append({'strike':i,'bid':c.bid,'ask':c.ask})
+    max_premium = 0
+    best_spread = {}
+    for i in spread_list:
+        for j in spread_list:
+            if i['strike'] < j['strike']:
+                premium = (i['ask']-j['bid'])/(j['strike']-i['strike'])
+                if premium > max_premium:
+                    max_premium = premium
+                    best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['ask'], 'premium_paid':j['bid']}
+    return best_spread
