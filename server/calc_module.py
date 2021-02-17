@@ -47,6 +47,27 @@ def get_strike_bracket(call_object, price_target):
         lower_weight = (higher_strike - price_target)/(higher_strike - lower_strike)
     return {'lower_strike':lower_strike,'higher_strike':higher_strike, 'lower_weight':lower_weight}
 
+def get_delta(symbol:str, percent_move:float, expiry:str):
+    s = Stock(symbol)
+    up_px = s.price*(1+percent_move/100)
+    down_px = s.price*(1-percent_move/100)
+    call = Call(symbol,d=int(expiry[0:2]),m=int(expiry[3:5]),y=int(expiry[6:10]))
+    up_delta_dict = get_strike_bracket(call, up_px)
+    call.set_strike(up_delta_dict['lower_strike'])
+    delta1 = call.delta()*up_delta_dict['lower_weight']
+    call.set_strike(up_delta_dict['higher_strike'])
+    delta2 = call.delta()*(1-up_delta_dict['lower_weight'])
+    delta_up_move = delta1 + delta2
+
+    put = Put(symbol,d=int(expiry[0:2]),m=int(expiry[3:5]),y=int(expiry[6:10]))
+    down_delta_dict = get_strike_bracket(put, down_px)
+    put.set_strike(down_delta_dict['lower_strike'])
+    delta1 = call.delta()*down_delta_dict['lower_weight']
+    put.set_strike(down_delta_dict['higher_strike'])
+    delta2 = call.delta()*(1-down_delta_dict['lower_weight'])
+    delta_down_move = delta1 + delta2
+    return {'delta_up':delta_up_move,'delta_down':delta_down_move}
+
 def get_atm_ivol(s, ndays=30):
     #Need to fix for divs, borrow etc to find atm
     symbol = s.ticker
@@ -151,8 +172,10 @@ def get_best_call_trades(ticker, num_of_days):
                 win_amt = premium_per_dollar*prob_winning_spread
                 if win_amt > max_amt:
                     max_amt = win_amt
-                    best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask']}
-    return {'best_spread':best_spread,'best_call':best_call_written}
+                    best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
+    best_call_written['expiry'] = expiry_to_use
+    my_delta = get_delta(ticker, 5, expiry_to_use)
+    return {'best_spread':best_spread,'best_call':best_call_written,'delta':my_delta}
 
 def get_best_put_trades(ticker, num_of_days):
     p = Put(ticker)
@@ -196,5 +219,6 @@ def get_best_put_trades(ticker, num_of_days):
                 win_amt = premium_per_dollar*prob_winning_spread
                 if win_amt > max_amt:
                     max_amt = win_amt
-                    best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask']}
+                    best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
+    best_put_written['expiry'] = expiry_to_use
     return {'best_spread':best_spread,'best_put':best_put_written}
