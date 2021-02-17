@@ -9,8 +9,8 @@ async def get_notes() -> dict:
     return get_range_data_from_symbol('SPY',7)
 
 @router.get("/range/{symbol}")
-async def get_range_data(symbol: str) -> dict:
-    return get_range_data_from_symbol(symbol,7)
+async def get_range_data(symbol: str, days:int = 7) -> dict:
+    return get_range_data_from_symbol(symbol,days)
 
 @router.get("/yolo/{my_list}")
 async def get_my_yolo(my_list: str) -> dict:
@@ -27,13 +27,13 @@ async def get_my_yolo(my_list: str) -> dict:
     #return yolo_dict
 
 @router.get("/call_trades/{symbol}")
-async def get_my_call_spread(symbol: str) -> dict:
-    return get_best_call_trades(symbol, 7)
+async def get_my_call_trades(symbol: str, days:int = 7) -> dict:
+    return get_best_call_trades(symbol, days)
 
 @router.get("/put_trades/{symbol}")
-async def get_my_put_spread(symbol: str) -> dict:
-    return get_best_put_trades(symbol, 7)
+async def get_my_put_trades(symbol: str, days:int = 7) -> dict:
+    return get_best_put_trades(symbol, days)
 
 @router.get("/prob/{symbol}")
-async def get_delta_range(symbol: str) -> dict:
-    return get_probability_move(symbol, 7,5 )
+async def get_my_probabilities(symbol: str, days:int = 7, percent:float = 5) -> dict:
+    return get_probability_move(symbol, days, percent)
