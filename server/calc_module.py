@@ -174,8 +174,21 @@ def get_best_call_trades(ticker, num_of_days):
                     max_amt = win_amt
                     best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
     best_call_written['expiry'] = expiry_to_use
-    my_delta = get_delta(ticker, 5, expiry_to_use)
-    return {'best_spread':best_spread,'best_call':best_call_written,'delta':my_delta}
+
+    return {'best_spread':best_spread,'best_call':best_call_written}
+
+def get_probability_move(symbol:str, n_days:int, percent:float):
+    c = Call(symbol)
+    curr_date = str(datetime.date(datetime.now()))
+    expiries = c.expirations
+    expiry_to_use = expiries[0]
+    for i in expiries:
+        days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
+        expiry_to_use = i
+        if days_to_exp >= n_days:
+            break
+    my_delta = get_delta(symbol, percent, expiry_to_use)
+    return {"move_percent":percent, 'expiry':expiry_to_use, "prob_down":my_delta['delta_down'],"prob_up":my_delta['delta_up'] }
 
 def get_best_put_trades(ticker, num_of_days):
     p = Put(ticker)

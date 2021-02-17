@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Body
 from fastapi.encoders import jsonable_encoder
-from server.calc_module import get_range_data_from_symbol, get_best_call_trades, get_best_put_trades
+from server.calc_module import get_range_data_from_symbol, get_best_call_trades, get_best_put_trades, get_probability_move
 
 router = APIRouter()
 
@@ -33,3 +33,7 @@ async def get_my_call_spread(symbol: str) -> dict:
 @router.get("/put_trades/{symbol}")
 async def get_my_put_spread(symbol: str) -> dict:
     return get_best_put_trades(symbol, 7)
+
+@router.get("/prob/{symbol}")
+async def get_delta_range(symbol: str) -> dict:
+    return get_probability_move(symbol, 7,5 )
