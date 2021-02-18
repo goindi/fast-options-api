@@ -111,7 +111,6 @@ def get_range_data_from_symbol(symbol, ndays=7):
     except:
         return return_dict
 
-
 def calculate_bollingers(s, ndays = 20, sigma = 2):
     #Need to update it intraday. Pushing the problem out for later
     #tp is Typical Price. A way to capture high and low (volatility)
@@ -217,6 +216,32 @@ def get_normalized_probability_move(symbol:str, n_days:int, sigma_fraction_to_us
         norm_prob_down = prob_down*0.5/prob_up
     return {"move_percent":my_percent, 'expiry':expiry_to_use, "prob_down":prob_down,"norm_prob_down":norm_prob_down,"prob_up":prob_up, "norm_prob_up":norm_prob_up}
 
+def get_forward(symbol, n_days):
+    s = Stock(symbol)
+    c = Call(symbol)
+    curr_date = str(datetime.date(datetime.now()))
+    expiries = c.expirations
+    expiry_to_use = expiries[0]
+    my_n_days = 0
+    for i in expiries:
+        days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
+        expiry_to_use = i
+        my_n_days = days_to_exp
+        if days_to_exp >= n_days:
+            break
+    call = Call(symbol,d=int(expiry_to_use[0:2]),m=int(expiry_to_use[3:5]),y=int(expiry_to_use[6:10]))
+    put = Put(symbol,d=int(expiry_to_use[0:2]),m=int(expiry_to_use[3:5]),y=int(expiry_to_use[6:10]))
+    bracket_dict = get_strike_bracket(call, s.price)
+    forward = s.price
+    if bracket_dict['lower_weight'] > 0.5:
+        call.set_strike(bracket_dict['lower_strike'])
+        put.set_strike(bracket_dict['lower_strike'])
+        forward = bracket_dict['lower_strike'] - put.price + call.price
+    else:
+        call.set_strike(bracket_dict['higher_strike'])
+        put.set_strike(bracket_dict['higher_strike'])
+        forward = bracket_dict['higher_strike'] - put.price + call.price
+    return {"forward_price":forward,"current_price":s.price, "expiry":expiry_to_use}
 
 def get_best_put_trades(ticker, num_of_days):
     p = Put(ticker)
@@ -263,3 +288,15 @@ def get_best_put_trades(ticker, num_of_days):
                     best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
     best_put_written['expiry'] = expiry_to_use
     return {'best_spread':best_spread,'best_put':best_put_written}
+
+def get_amt_invest(symbol:str,n_days:int):
+    prob_dict = get_probability_move(symbol, n_days,0)
+    #print(prob_dict)
+    curr_date = str(datetime.date(datetime.now()))
+    days_to_exp = abs(datetime.strptime(prob_dict['expiry'],'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
+    return {"kelly":prob_dict['prob_up'] - prob_dict['prob_down'], "expiry":prob_dict['expiry']}
+
+    # my_tuple = get_atm_ivol(Stock(symbol), days_to_exp)
+    # perc_move = my_tuple[1]*1.15/2
+    # print(f"{perc_move}, {prob_dict['prob_up']},{prob_dict['prob_down']}")
+    # return (prob_dict['prob_up'] - prob_dict['prob_down'])/perc_move
