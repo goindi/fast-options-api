@@ -74,6 +74,7 @@ def get_atm_ivol(s, ndays=30):
     expiry_dict = get_expiries_bracket(symbol, ndays)
     #First Shorter One
     x = expiry_dict['shorter_expiry']
+    print(x)
     shorter_call = Call(symbol,d=int(x[0:2]),m=int(x[3:5]),y=int(x[6:10]))
     strike_dict = get_strike_bracket(shorter_call, s.price)
     shorter_call.set_strike(strike_dict['lower_strike'])
@@ -294,7 +295,7 @@ def get_amt_invest(symbol:str,n_days:int):
     #print(prob_dict)
     curr_date = str(datetime.date(datetime.now()))
     days_to_exp = abs(datetime.strptime(prob_dict['expiry'],'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
-    return {"kelly":prob_dict['prob_up'] - prob_dict['prob_down'], "expiry":prob_dict['expiry']}
+    return {"kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry']}
 
     # my_tuple = get_atm_ivol(Stock(symbol), days_to_exp)
     # perc_move = my_tuple[1]*1.15/2
