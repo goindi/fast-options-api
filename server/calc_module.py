@@ -307,4 +307,5 @@ def amt_to_invest(symbol:str,n_days:int):
 def stock_volume (symbol:str, n_days:int):
     s = yf.Ticker(symbol)
     p = stats.percentileofscore(s.history()[-n_days:].Volume,s.info['volume'])
-    return {'percentile':p}
+    w = Stock(symbol)
+    return {'symbol':symbol, 'price':w.price, 'percentile':p}
