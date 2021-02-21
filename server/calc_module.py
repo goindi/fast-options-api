@@ -2,6 +2,8 @@ import sys
 import math
 from datetime import datetime, timedelta
 from wallstreet import Call, Put, Stock
+from scipy import stats
+import yfinance as yf
 
 def get_expiries_bracket(ticker, num_of_days):
     c = Call(ticker)
@@ -95,7 +97,7 @@ def get_atm_ivol(s, ndays=30):
     one_sigma_move_ndays_day = implied_ivol*math.sqrt(ndays/365)
     return (implied_ivol, one_sigma_move_ndays_day)
 
-def get_range_data_from_symbol(symbol, ndays=7):
+def range_data_from_symbol(symbol, ndays=7):
     return_dict = {"symbol": "Error",
                     "desc": "No Data found for %s"%symbol
                 }
@@ -130,7 +132,7 @@ def calculate_bollingers(s, ndays = 20, sigma = 2):
 def kelly_fraction(win_prob : float, win_loss_ratio:float)->float:
     return win_prob - (1-win_prob)/win_loss_ratio
 
-def get_best_call_trades(ticker, num_of_days):
+def best_call_trades(ticker, num_of_days):
     c = Call(ticker)
     range_dict = get_range_data_from_symbol(ticker, num_of_days)
     curr_date = str(datetime.date(datetime.now()))
@@ -177,7 +179,7 @@ def get_best_call_trades(ticker, num_of_days):
 
     return {'best_spread':best_spread,'best_call':best_call_written}
 
-def get_probability_move(symbol:str, n_days:int, percent:float):
+def prob_move_pct(symbol:str, n_days:int, percent:float):
     c = Call(symbol)
     curr_date = str(datetime.date(datetime.now()))
     expiries = c.expirations
@@ -190,7 +192,7 @@ def get_probability_move(symbol:str, n_days:int, percent:float):
     my_delta = get_delta(symbol, percent, expiry_to_use)
     return {"move_percent":percent, 'expiry':expiry_to_use, "prob_down":my_delta['delta_down'],"prob_up":my_delta['delta_up'] }
 
-def get_normalized_probability_move(symbol:str, n_days:int, sigma_fraction_to_use:float):
+def prob_move_sigma(symbol:str, n_days:int, sigma_fraction_to_use:float):
     c = Call(symbol)
     curr_date = str(datetime.date(datetime.now()))
     expiries = c.expirations
@@ -217,7 +219,7 @@ def get_normalized_probability_move(symbol:str, n_days:int, sigma_fraction_to_us
         norm_prob_down = prob_down*0.5/prob_up
     return {"move_percent":my_percent, 'expiry':expiry_to_use, "prob_down":prob_down,"norm_prob_down":norm_prob_down,"prob_up":prob_up, "norm_prob_up":norm_prob_up}
 
-def get_forward(symbol, n_days):
+def implied_forward(symbol, n_days):
     s = Stock(symbol)
     c = Call(symbol)
     curr_date = str(datetime.date(datetime.now()))
@@ -244,7 +246,7 @@ def get_forward(symbol, n_days):
         forward = bracket_dict['higher_strike'] - put.price + call.price
     return {"forward_price":forward,"current_price":s.price, "expiry":expiry_to_use}
 
-def get_best_put_trades(ticker, num_of_days):
+def best_put_trades(ticker, num_of_days):
     p = Put(ticker)
     range_dict = get_range_data_from_symbol(ticker, num_of_days)
     curr_date = str(datetime.date(datetime.now()))
@@ -290,7 +292,7 @@ def get_best_put_trades(ticker, num_of_days):
     best_put_written['expiry'] = expiry_to_use
     return {'best_spread':best_spread,'best_put':best_put_written}
 
-def get_amt_invest(symbol:str,n_days:int):
+def amt_to_invest(symbol:str,n_days:int):
     prob_dict = get_probability_move(symbol, n_days,0)
     #print(prob_dict)
     curr_date = str(datetime.date(datetime.now()))
@@ -301,3 +303,8 @@ def get_amt_invest(symbol:str,n_days:int):
     # perc_move = my_tuple[1]*1.15/2
     # print(f"{perc_move}, {prob_dict['prob_up']},{prob_dict['prob_down']}")
     # return (prob_dict['prob_up'] - prob_dict['prob_down'])/perc_move
+
+def stock_volume (symbol:str, n_days:int):
+    s = yf.Ticker(symbol)
+    p = stats.percentileofscore(s.history()[-n_days:].Volume,s.info['volume'])
+    return {'percentile':p}
