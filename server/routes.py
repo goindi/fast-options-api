@@ -54,7 +54,8 @@ async def get_my_trade_of_day(my_list: str, days:int = 7, sigma:float = 0.5) -> 
     bullet_1 = ""
     symbol = yolo_trade_dict["bullish_stock_symbol"]
     if yolo_trade_dict["bullish_kelly"] > 0:
-        kelly_to_use = min(yolo_trade_dict["bullish_kelly"],0.1)*100
+        #kelly_to_use = min(yolo_trade_dict["bullish_kelly"],0.1)*100
+        kelly_to_use = yolo_trade_dict["bullish_kelly"]*100
         bullet_1 = f'Planning $100 YOLO? Buy ${kelly_to_use:.2f} of {symbol}'
     expiry = call_trade['expiry']
     exp = datetime.strptime(expiry,'%d-%m-%Y').strftime('%b %d')
