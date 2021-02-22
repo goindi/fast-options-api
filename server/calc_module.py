@@ -4,6 +4,8 @@ from datetime import datetime, timedelta
 from wallstreet import Call, Put, Stock
 from scipy import stats
 import yfinance as yf
+import trading_calendars as tc
+import pandas as pd
 
 def get_expiries_bracket(ticker, num_of_days):
     c = Call(ticker)
@@ -134,7 +136,7 @@ def kelly_fraction(win_prob : float, win_loss_ratio:float)->float:
 
 def best_call_trades(ticker, num_of_days):
     c = Call(ticker)
-    range_dict = get_range_data_from_symbol(ticker, num_of_days)
+    range_dict = range_data_from_symbol(ticker, num_of_days)
     curr_date = str(datetime.date(datetime.now()))
     expiries = c.expirations
     expiry_to_use = expiries[0]
@@ -248,7 +250,7 @@ def implied_forward(symbol, n_days):
 
 def best_put_trades(ticker, num_of_days):
     p = Put(ticker)
-    range_dict = get_range_data_from_symbol(ticker, num_of_days)
+    range_dict = range_data_from_symbol(ticker, num_of_days)
     curr_date = str(datetime.date(datetime.now()))
     expiries = p.expirations
     expiry_to_use = expiries[0]
@@ -293,7 +295,7 @@ def best_put_trades(ticker, num_of_days):
     return {'best_spread':best_spread,'best_put':best_put_written}
 
 def amt_to_invest(symbol:str,n_days:int):
-    prob_dict = get_probability_move(symbol, n_days,0)
+    prob_dict = prob_move_pct(symbol, n_days,0)
     #print(prob_dict)
     curr_date = str(datetime.date(datetime.now()))
     days_to_exp = abs(datetime.strptime(prob_dict['expiry'],'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
@@ -305,7 +307,16 @@ def amt_to_invest(symbol:str,n_days:int):
     # return (prob_dict['prob_up'] - prob_dict['prob_down'])/perc_move
 
 def stock_volume (symbol:str, n_days:int):
+    xnys = tc.get_calendar("XNYS")
     s = yf.Ticker(symbol)
-    p = stats.percentileofscore(s.history()[-n_days:].Volume,s.info['volume'])
-    w = Stock(symbol)
-    return {'symbol':symbol, 'price':w.price, 'percentile':p}
+    if xnys.is_session(pd.Timestamp(datetime.now())):
+        d1 = datetime.now()
+        d2 = d1.replace(hour=9)
+        d2 = d1.replace(minute=30)
+        delta = d1 - d2
+        weight = (390*60)/delta.total_seconds()
+        p = stats.percentileofscore(s.history()[-n_days:].Volume,s.info['volume']*weight)
+    else:
+        p = stats.percentileofscore(s.history()[-n_days:].Volume,s.info['volume'])
+
+    return {'symbol':symbol, 'percentile':p}
