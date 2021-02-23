@@ -78,7 +78,6 @@ def get_atm_ivol(s, ndays=30):
     expiry_dict = get_expiries_bracket(symbol, ndays)
     #First Shorter One
     x = expiry_dict['shorter_expiry']
-    print(x)
     shorter_call = Call(symbol,d=int(x[0:2]),m=int(x[3:5]),y=int(x[6:10]))
     strike_dict = get_strike_bracket(shorter_call, s.price)
     shorter_call.set_strike(strike_dict['lower_strike'])
@@ -160,7 +159,6 @@ def best_call_trades(ticker, num_of_days):
     best_call_written = {}
 
     for i in spread_list:
-        print(i)
         #for call
         prob_winning_call = 1 - i['delta']
         premium_call = i['bid']
@@ -274,7 +272,6 @@ def best_put_trades(ticker, num_of_days):
     best_put_written = {}
     spread_list.reverse()
     for i in spread_list:
-        print(i)
         #for call
         prob_winning_put = 1 - i['delta']
         premium_put = i['bid']
