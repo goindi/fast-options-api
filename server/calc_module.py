@@ -105,12 +105,19 @@ def range_data_from_symbol(symbol, ndays=7):
     try:
         s = Stock(symbol)
         my_tuple = get_atm_ivol(s, ndays)
+        volume = stock_volume(symbol, ndays)
+        prob = prob_move_pct(symbol, ndays,0)
         return_dict["symbol"] = symbol
         return_dict["desc"] = s.name
         return_dict["price"] = s.price
         return_dict["ivol"] = my_tuple[0]
         return_dict["low_range"] = s.price - s.price*my_tuple[1]*1.15
         return_dict["high_range"] = s.price + s.price*my_tuple[1]*1.15
+        return_dict["volume_pct"] = volume["percentile"]
+        return_dict["today_volume"] = volume["volume"]
+        return_dict["avg_10d_volume"] = volume["avg_10d_volume"]
+        return_dict["prob_up"] = prob["prob_up"]
+
         return return_dict
     except:
         return return_dict
@@ -306,6 +313,7 @@ def amt_to_invest(symbol:str,n_days:int):
 def stock_volume (symbol:str, n_days:int):
     xnys = tc.get_calendar("XNYS")
     s = yf.Ticker(symbol)
+    weight = 1
     if xnys.is_session(pd.Timestamp(datetime.now())):
         d1 = datetime.now()
         d2 = d1.replace(hour=9)
@@ -315,5 +323,6 @@ def stock_volume (symbol:str, n_days:int):
         p = stats.percentileofscore(s.history()[-n_days:].Volume,s.info['volume']*weight)
     else:
         p = stats.percentileofscore(s.history()[-n_days:].Volume,s.info['volume'])
+    today_volume = s.info['volume']*weight
 
-    return {'symbol':symbol, 'percentile':p}
+    return {'symbol':symbol, 'percentile':p, 'volume':today_volume, 'avg_10d_volume':s.info['averageVolume10days']}

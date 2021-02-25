@@ -51,6 +51,8 @@ async def get_my_trade_of_day(my_list: str, days:int = 7, sigma:float = 0.5) -> 
     yolo_trade_dict = get_best_trade(symbol_list,days,sigma)
     call_trade =  best_call_trades(yolo_trade_dict['bullish_stock_symbol'], days)
     call_trade = call_trade['best_call']
+    print(f"{yolo_trade_dict}--{call_trade}")
+
     bullet_1 = ""
     symbol = yolo_trade_dict["bullish_stock_symbol"]
     if yolo_trade_dict["bullish_kelly"] > 0:
@@ -89,6 +91,10 @@ async def get_amt_to_invest(symbol: str, days:int = 7) -> dict:
 
 @router.get("/options/doom")
 async def get_doom_prob(symbol: str = 'SPY', days:int = 365, percent:int = 20) -> dict:
+    return prob_move_pct(symbol, days, percent)
+
+@router.get("/options/doom/{symbol}")
+async def get_doom_prob(symbol: str, days:int = 365, percent:int = 20) -> dict:
     return prob_move_pct(symbol, days, percent)
 
 @router.get("/stocks/volume/{symbol}")
