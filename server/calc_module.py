@@ -303,7 +303,7 @@ def amt_to_invest(symbol:str,n_days:int):
     #print(prob_dict)
     curr_date = str(datetime.date(datetime.now()))
     days_to_exp = abs(datetime.strptime(prob_dict['expiry'],'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
-    return {"kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry']}
+    return {"kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry'], "prob_up":prob_dict['prob_up']}
 
     # my_tuple = get_atm_ivol(Stock(symbol), days_to_exp)
     # perc_move = my_tuple[1]*1.15/2
