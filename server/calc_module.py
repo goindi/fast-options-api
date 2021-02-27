@@ -98,7 +98,7 @@ def get_atm_ivol(s, ndays=30):
     one_sigma_move_ndays_day = implied_ivol*math.sqrt(ndays/365)
     return (implied_ivol, one_sigma_move_ndays_day)
 
-def range_data_from_symbol(symbol, ndays=7):
+def range_data_from_symbol(symbol, ndays=7, sigma=1.15):
     return_dict = {"symbol": "Error",
                     "desc": "No Data found for %s"%symbol
                 }
@@ -111,8 +111,8 @@ def range_data_from_symbol(symbol, ndays=7):
         return_dict["desc"] = s.name
         return_dict["price"] = s.price
         return_dict["ivol"] = my_tuple[0]
-        return_dict["low_range"] = s.price - s.price*my_tuple[1]*1.15
-        return_dict["high_range"] = s.price + s.price*my_tuple[1]*1.15
+        return_dict["low_range"] = s.price - s.price*my_tuple[1]*sigma
+        return_dict["high_range"] = s.price + s.price*my_tuple[1]*sigma
         return_dict["volume_pct"] = volume["percentile"]
         return_dict["today_volume"] = volume["volume"]
         return_dict["avg_10d_volume"] = volume["avg_10d_volume"]

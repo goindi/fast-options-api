@@ -1,7 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from server.routes import router as OptionRouter
-app = FastAPI()
+from server.routes import tags_metadata
+
+app = FastAPI(openapi_tags=tags_metadata)
 
 origins = [
         "http://localhost.tiangolo.com",
