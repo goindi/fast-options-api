@@ -167,7 +167,7 @@ def best_call_trades(ticker, num_of_days):
 
     for i in spread_list:
         #for call
-        prob_winning_call = 1 - i['delta']
+        prob_winning_call = 1 - i['delta'] # Not expiring in the money
         premium_call = i['bid']
         call_win_amt = premium_call*prob_winning_call
         if call_win_amt > max_call_amt:
@@ -181,7 +181,7 @@ def best_call_trades(ticker, num_of_days):
                 win_amt = premium_per_dollar*prob_winning_spread
                 if win_amt > max_amt:
                     max_amt = win_amt
-                    best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
+                    best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
     best_call_written['expiry'] = expiry_to_use
 
     return {'best_spread':best_spread,'best_call':best_call_written}
