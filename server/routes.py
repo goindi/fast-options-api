@@ -15,15 +15,15 @@ tags_metadata = [
     },
     {
         "name": "doom",
-        "description": "Using options data we calculate probability of options expiring in the money. For a call that is eqivalent to probability of stock being over strike and for put prob of stock being below the strike. Doom gives us the probability of put expiring in the money",
+        "description": "Using options data we calculate the probability of options expiring in the money. For a call that is eqivalent to the probability of stock being over strike and for the put prob of stock being below the strike. Doom gives us the probability of put expiring in the money",
         "externalDocs": {
-            "description": "Delta Approximation Distribution",
+            "description": "Delta Approximation",
             "url": "https://www.macroption.com/delta-calls-puts-probability-expiring-itm/",
         },
     },
     {
         "name": "volume",
-        "description": "Using stock volume from past 10 days, calculates the current level in two ways - as a multiple of average daily volume and as a percentile. Volume numbers during a trading session are scaled appropriately",
+        "description": "Using stock volume from past 10 days, we calculate the current level in two ways - as a multiple of average daily volume and as a percentile. Volume numbers during a trading session are scaled appropriately",
         "externalDocs": {
             "description": "Yahoo Finance",
             "url": "https://finance.yahoo.com/quote/spy",
