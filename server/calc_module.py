@@ -255,6 +255,9 @@ def best_call_trades(symbol, num_of_days):
     return return_dict
 
 def prob_move_pct(symbol:str, n_days:int, percent:float):
+    symbol=symbl.lower()
+    if r.hget(f'{symbol}|pmovepct|{n_days}|{percent}','time') and (int(datetime.utcnow().strftime('%s')) - int(r.hget(f'{symbol}|pmovepct|{n_days}|{percent}','time'))) < CACHE_TIMEOUT:
+        return ast.literal_eval(r.hget(f'{symbol}|pmovepct|{n_days}|{percent}','value'))
     c = Call(symbol)
     curr_date = str(datetime.date(datetime.now()))
     expiries = c.expirations
@@ -265,7 +268,11 @@ def prob_move_pct(symbol:str, n_days:int, percent:float):
         if days_to_exp >= n_days:
             break
     my_delta = get_delta(symbol, percent, expiry_to_use)
-    return {"move_percent":percent, 'expiry':expiry_to_use, "prob_down":my_delta['delta_down'],"prob_up":my_delta['delta_up'] }
+    return_dict = {"move_percent":percent, 'expiry':expiry_to_use, "prob_down":my_delta['delta_down'],"prob_up":my_delta['delta_up'] }
+    r.hset(f'{symbol}|pmovepct|{n_days}|{percent}','time',datetime.utcnow().strftime('%s'))
+    r.hset(f'{symbol}|pmovepct|{n_days}|{percent}','value',str(return_dict))
+    return return_dict
+
 
 def prob_move_sigma(symbol:str, n_days:int, sigma_fraction_to_use:float):
     c = Call(symbol)
