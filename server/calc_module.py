@@ -310,6 +310,18 @@ def amt_to_invest(symbol:str,n_days:int):
     # print(f"{perc_move}, {prob_dict['prob_up']},{prob_dict['prob_down']}")
     # return (prob_dict['prob_up'] - prob_dict['prob_down'])/perc_move
 
+def div_details(symbol:str):
+    y = yf.Ticker(symbol)
+    if y.dividends.empty:
+        div = "0"
+        div_date = ""
+        div_yld = "0"
+    else:
+        div = y.dividends[-1]
+        div_date = str(y.dividends.index[-1])[0:10]
+        div_yld = y.info['dividendRate']
+    return {'div':div, 'div_date':div_date, 'div_yld':div_yld}
+
 def stock_volume (symbol:str, n_days:int):
     xnys = tc.get_calendar("XNYS")
     s = yf.Ticker(symbol)

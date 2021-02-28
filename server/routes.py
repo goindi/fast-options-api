@@ -2,7 +2,7 @@ from fastapi import APIRouter, Body
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime
 from server.calc_module import range_data_from_symbol, best_call_trades, best_put_trades, stock_volume
-from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest
+from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details
 
 tags_metadata = [
     {
@@ -51,6 +51,14 @@ tags_metadata = [
         "externalDocs": {
             "description": "Kelly Criterion",
             "url": "https://en.wikipedia.org/wiki/Kelly_criterion",
+        },
+    },
+    {
+        "name": "dividend",
+        "description": "Shows last dividend date and amount as well as dividend yield. ",
+        "externalDocs": {
+            "description": "Yahoo Finance",
+            "url": "https://finance.yahoo.com/quote/SPY/options?p=SPY",
         },
     },
 ]
@@ -151,3 +159,7 @@ async def get_doom_prob(symbol: str, days:int = 365, percent:int = 20) -> dict:
 @router.get("/stocks/volume/{symbol}")
 async def get_stock_volume(symbol: str, days:int = 10) -> dict:
     return stock_volume(symbol, days)
+
+@router.get("/stocks/dividend/{symbol}")
+async def get_div_details(symbol: str) -> dict:
+    return div_details(symbol)
