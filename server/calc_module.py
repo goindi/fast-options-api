@@ -319,7 +319,7 @@ def div_details(symbol:str):
     else:
         div = y.dividends[-1]
         div_date = str(y.dividends.index[-1])[0:10]
-        div_yld = y.info['dividendRate']
+        div_yld = y.info['dividendYield']
     return {'div':div, 'div_date':div_date, 'div_yld':div_yld}
 
 def stock_volume (symbol:str, n_days:int):
