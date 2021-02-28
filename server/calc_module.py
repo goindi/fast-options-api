@@ -437,4 +437,4 @@ def stock_volume (symbol:str, n_days:int):
     if r.hget(symbol,'date') != curr_date or not r.hget(symbol,'avg_10d_volume') :
         r.hset(symbol,'date', curr_date)
         r.hset(symbol,'avg_10d_volume', s.info['averageVolume10days'])
-    return {'symbol':symbol, 'percentile':p, 'volume':today_volume, 'avg_10d_volume':r.hget(symbol,'avg_10d_volume')}
+    return {'symbol':symbol, 'percentile':p, 'volume':today_volume, 'avg_10d_volume':int(r.hget(symbol,'avg_10d_volume'))}
