@@ -8,11 +8,9 @@ import trading_calendars as tc
 import pandas as pd
 from scipy.stats import norm
 import ast
-CACHE_TIMEOUT = 120
-
-
 import redis
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+CACHE_TIMEOUT = 120
 
 def get_expiries_bracket(symbol, num_of_days):
     c = Call(symbol)
@@ -156,7 +154,7 @@ def get_atm_ivol(s, ndays=30):
     return (implied_ivol, one_sigma_move_ndays_day)
 
 def range_data_from_symbol(symbol, ndays=7, sigma=1.15):
-    symbol = symbol.lower()
+    symbol = symbol.upper()
     return_dict = {"symbol": "Error",
                     "desc": "No Data found for %s"%symbol
                 }
@@ -204,7 +202,7 @@ def kelly_fraction(win_prob : float, win_loss_ratio:float)->float:
     return win_prob - (1-win_prob)/win_loss_ratio
 
 def best_call_trades(symbol, num_of_days):
-    symbol=symbol.lower()
+    symbol=symbol.upper()
     if r.hget(f'{symbol}|calltrade|{num_of_days}','time') and (int(datetime.utcnow().strftime('%s')) - int(r.hget(f'{symbol}|calltrade|{num_of_days}','time'))) < CACHE_TIMEOUT:
         return ast.literal_eval(r.hget(f'{symbol}|calltrade|{num_of_days}','value'))
     c = Call(symbol)
@@ -255,7 +253,7 @@ def best_call_trades(symbol, num_of_days):
     return return_dict
 
 def prob_move_pct(symbol:str, n_days:int, percent:float):
-    symbol=symbol.lower()
+    symbol=symbol.upper()
     if r.hget(f'{symbol}|pmovepct|{n_days}|{percent}','time') and (int(datetime.utcnow().strftime('%s')) - int(r.hget(f'{symbol}|pmovepct|{n_days}|{percent}','time'))) < CACHE_TIMEOUT:
         return ast.literal_eval(r.hget(f'{symbol}|pmovepct|{n_days}|{percent}','value'))
     c = Call(symbol)
@@ -272,7 +270,6 @@ def prob_move_pct(symbol:str, n_days:int, percent:float):
     r.hset(f'{symbol}|pmovepct|{n_days}|{percent}','time',datetime.utcnow().strftime('%s'))
     r.hset(f'{symbol}|pmovepct|{n_days}|{percent}','value',str(return_dict))
     return return_dict
-
 
 def prob_move_sigma(symbol:str, n_days:int, sigma_fraction_to_use:float):
     c = Call(symbol)
@@ -329,7 +326,7 @@ def implied_forward(symbol, n_days):
     return {"forward_price":forward,"current_price":s.price, "expiry":expiry_to_use}
 
 def best_put_trades(symbol, num_of_days):
-    symbol=symbol.lower()
+    symbol=symbol.upper()
     if r.hget(f'{symbol}|puttrade|{num_of_days}','time') and (int(datetime.utcnow().strftime('%s')) - int(r.hget(f'{symbol}|puttrade|{num_of_days}','time'))) < CACHE_TIMEOUT:
         return ast.literal_eval(r.hget(f'{symbol}|puttrade|{num_of_days}','value'))
 
@@ -382,7 +379,7 @@ def best_put_trades(symbol, num_of_days):
 
 
 def amt_to_invest(symbol:str,n_days:int):
-    symbol=symbol.lower()
+    symbol=symbol.upper()
     if r.hget(f'{symbol}|kelly|{n_days}','time') and (int(datetime.utcnow().strftime('%s')) - int(r.hget(f'{symbol}|kelly|{n_days}','time'))) < CACHE_TIMEOUT:
         return ast.literal_eval(r.hget(f'{symbol}|kelly|{n_days}','value'))
     prob_dict = prob_move_pct(symbol, n_days,0)
@@ -415,33 +412,29 @@ def div_details(symbol:str):
 def stock_volume (symbol:str, n_days:int):
     symbol = symbol.upper()
     curr_date = str(datetime.now().date())
-    if not r.get(curr_date):
-        xnys = tc.get_calendar("XNYS")
-        print("here")
-        if xnys.is_session(pd.Timestamp(datetime.now())):
-            r.set(curr_date,"trading")
-        else:
-            r.set(curr_date,"not-trading")
+    is_trading = r.hget(curr_date,"trading")
     s = yf.Ticker(symbol)
     weight = 1
     d1 = datetime.now()
-    #if d1.hour>9 and d1.hour<16:
-
-    if r.get(curr_date) == "trading":
+    info = s.info
+    if is_trading == "yes":
         print("here2")
         d2 = d1.replace(hour=9)
-        d2 = d1.replace(minute=30)
-        delta = d1 - d2
-        if delta.total_seconds() >= 390*60:
-            weight = 1
-            r.set(curr_date,"not-trading")
-        else:
-            weight = (390*60)/delta.total_seconds()
+        d2 = d2.replace(minute=30)
+        if d1 > d2:
+            delta = d1 - d2
+            print(delta.total_seconds())
+            if delta.total_seconds() >= 390*60:
+                print('here')
+                weight = 1
+                #r.hset(curr_date,"trading")
+            else:
+                weight = (390*60)/delta.total_seconds()
 
-    today_volume = s.info['volume']*weight
+    today_volume = info['volume']*weight
     p = stats.percentileofscore(s.history()[-n_days:].Volume,today_volume)
-    avg_10d_volume = 0
-    if r.hget(symbol,'date') != curr_date or not r.hget(symbol,'avg_10d_volume') :
-        r.hset(symbol,'date', curr_date)
-        r.hset(symbol,'avg_10d_volume', s.info['averageVolume10days'])
-    return {'symbol':symbol, 'percentile':p, 'volume':today_volume, 'avg_10d_volume':int(r.hget(symbol,'avg_10d_volume'))}
+    # avg_10d_volume = 0
+    # if r.hget(symbol,'date') != curr_date or not r.hget(symbol,'avg_10d_volume') :
+    #     r.hset(symbol,'date', curr_date)
+    #     r.hset(symbol,'avg_10d_volume', s.info['averageVolume10days'])
+    return {'symbol':symbol, 'percentile':p, 'volume':today_volume, 'avg_10d_volume':info['averageVolume10days']}
