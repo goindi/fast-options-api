@@ -220,10 +220,10 @@ def best_call_trades(symbol, num_of_days):
     spread_list = []
     strikes = c.strikes
     for i in strikes:
-        if i >= range_dict["high_range"] and counter < 15:
+        if i >= range_dict["high_range"] and counter < 10:
             counter = counter+1
             c.set_strike(i)
-            spread_list.append({'strike':i,'bid':c.bid,'ask':c.ask,'delta':c.delta()})
+            spread_list.append({'strike':i,'bid':c.bid,'ask':c.ask,'last':c.price,'using_last':'false','delta':c.delta()})
     max_amt = 0
     max_call_amt = 0
     best_spread = {}
@@ -232,6 +232,11 @@ def best_call_trades(symbol, num_of_days):
     for i in spread_list:
         #for call
         prob_winning_call = 1 - i['delta'] # Not expiring in the money
+        i['using_last']='false'
+        if i['bid'] == 0 and i['ask'] == 0:
+            i['bid'] = i['last']
+            i['ask'] = i['last']
+            i['using_last']='true'
         premium_call = i['bid']
         call_win_amt = premium_call*prob_winning_call
         if call_win_amt > max_call_amt:
@@ -241,15 +246,23 @@ def best_call_trades(symbol, num_of_days):
             if i['strike'] < j['strike']:
                 #for spread
                 premium_per_dollar = (i['bid']-j['ask'])/(j['strike']-i['strike'])
+                spread_using_last = 'false'
+                if i['using_last'] == 'true' or  j['using_last'] == 'true':
+                    spread_using_last = 'true'
                 prob_winning_spread = 1 - j['delta']
                 win_amt = premium_per_dollar*prob_winning_spread
                 if win_amt > max_amt:
                     max_amt = win_amt
-                    best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
+                    if spread_using_last == 'true':
+                        best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['last'], 'premium_paid':j['last'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
+                    else:
+                        best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['bid'],'premium_paid':j['ask'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
+
     best_call_written['expiry'] = expiry_to_use
     return_dict = {'best_spread':best_spread,'best_call':best_call_written}
-    r.hset(f'{symbol}|calltrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
-    r.hset(f'{symbol}|calltrade|{num_of_days}','value',str(return_dict))
+    if best_spread and best_call_written:
+        r.hset(f'{symbol}|calltrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
+        r.hset(f'{symbol}|calltrade|{num_of_days}','value',str(return_dict))
     return return_dict
 
 def prob_move_pct(symbol:str, n_days:int, percent:float):
@@ -373,8 +386,9 @@ def best_put_trades(symbol, num_of_days):
                     best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
     best_put_written['expiry'] = expiry_to_use
     return_dict = {'best_spread':best_spread,'best_put':best_put_written}
-    r.hset(f'{symbol}|puttrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
-    r.hset(f'{symbol}|puttrade|{num_of_days}','value',str(return_dict))
+    if best_spread and best_put_written:
+        r.hset(f'{symbol}|puttrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
+        r.hset(f'{symbol}|puttrade|{num_of_days}','value',str(return_dict))
     return return_dict
 
 
