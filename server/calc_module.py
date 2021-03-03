@@ -494,6 +494,8 @@ def is_cache_good(cache_key):
         if d1 <= close_time:
             if (now_in_sec - int(r.hget(cache_key,'time'))) < CACHE_TIMEOUT:
                 return True
-        elif (int(r.hget(cache_key,'time')) > int(close_time.strftime('%s'))):
+        print(r.hget(cache_key,'time'))
+        print(close_time.strftime('%s'))
+        elif int(r.hget(cache_key,'time')) > int(close_time.strftime('%s')):
             return True
     return False
