@@ -24,6 +24,15 @@ def check_is_trading():
     else:
         r.hset(curr_date,"trading_date","no")
 
+def run_caching():
+    for i in SYMBOL_LIST:
+        range_data_from_symbol(i, 7, 1.15)
+        time.sleep(1)
+        prob_move_pct(i,30,5)
+        time.sleep(1)
+        amt_to_invest(i,7)
+        time.sleep(1)
+
 
 while True:
     d1 = datetime.now()
@@ -32,13 +41,11 @@ while True:
     open_time = open_time.replace(minute=30)
     close_time = d1.replace(hour=16)
     close_time = close_time.replace(minute=30)
-    if r.hget(curr_date,"trading_date") == "yes" and d1 >= open_time and d1 <=close_time:
-        for i in SYMBOL_LIST:
-            range_data_from_symbol(i, 7, 1.15)
-            time.sleep(1)
-            prob_move_pct(i,30,5)
-            time.sleep(1)
-            amt_to_invest(i,7)
-            time.sleep(1)
+    if r.hget(curr_date,"trading_date") == "yes":
+        r.hset(curr_date,"cache_exists","yes")
+        run_caching()
+    elif not r.hget(curr_date,"cache_exists"):
+        r.hset(curr_date,"cache_exists","yes")
+        run_chaching()
     check_is_trading()
     time.sleep(CACHE_TIMEOUT)
