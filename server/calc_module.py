@@ -496,6 +496,6 @@ def is_cache_good(cache_key):
                 return True
         print(r.hget(cache_key,'time'))
         print(close_time.strftime('%s'))
-        elif int(r.hget(cache_key,'time')) > int(close_time.strftime('%s')):
+        if int(r.hget(cache_key,'time')) > int(close_time.strftime('%s')):
             return True
     return False
