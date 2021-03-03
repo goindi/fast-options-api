@@ -102,7 +102,7 @@ def get_best_trade(symbol_list: list, days:int, sigma:float ) -> dict:
             down_expiry = yolo_dict[i]["expiry"]
     up_kelly = amt_to_invest(max_up_symbol,days)
     down_kelly = amt_to_invest(max_down_symbol,days)
-    return {"bullish_stock_symbol":max_up_symbol, "bullish_kelly":up_kelly["kelly"], "bearish_stock_symbol":max_down_symbol,"bearish_kelly":down_kelly["kelly"],"bullish_stock_details":yolo_dict[max_up_symbol], "bearish_stock":yolo_dict[max_down_symbol]}
+    return {"bullish_stock_symbol":max_up_symbol, "bullish_kelly":up_kelly["kelly"],"bullish_kelly2":up_kelly["kelly2"], "bearish_stock_symbol":max_down_symbol,"bearish_kelly":down_kelly["kelly"],"bullish_stock_details":yolo_dict[max_up_symbol], "bearish_stock":yolo_dict[max_down_symbol]}
 
 @router.get("/options/tradeoftheday/{my_list}")
 async def get_my_trade_of_day(my_list: str, days:int = 7, sigma:float = 0.5) -> str:
@@ -116,8 +116,10 @@ async def get_my_trade_of_day(my_list: str, days:int = 7, sigma:float = 0.5) -> 
     symbol = yolo_trade_dict["bullish_stock_symbol"]
     if yolo_trade_dict["bullish_kelly"] > 0:
         #kelly_to_use = min(yolo_trade_dict["bullish_kelly"],0.1)*100
-        kelly_to_use = yolo_trade_dict["bullish_kelly"]*100
-        bullet_1 = f'Planning $100 YOLO? Buy ${kelly_to_use:.2f} of {symbol}'
+        kelly_to_use = yolo_trade_dict["bullish_kelly2"]*100
+        kelly_to_use2 = yolo_trade_dict["bullish_kelly"]*100
+        bullet_1 = f'Planning $100 YOLO? Buy ${kelly_to_use:.2f} of {symbol} (or more aggressive )Planning $100 YOLO? Buy ${kelly_to_use2:.2f} of {symbol}'
+
     expiry = call_trade['expiry']
     exp = datetime.strptime(expiry,'%d-%m-%Y').strftime('%b %d')
     #bullets_of_day = bullets_of_day + "&#13;&#10;"

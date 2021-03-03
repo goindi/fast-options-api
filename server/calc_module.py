@@ -1,6 +1,6 @@
 import sys
 import math
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from wallstreet import Call, Put, Stock
 from scipy import stats
 import yfinance as yf
@@ -10,7 +10,7 @@ from scipy.stats import norm
 import ast
 import redis
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
-CACHE_TIMEOUT = 120
+CACHE_TIMEOUT = 1800
 
 def get_expiries_bracket(symbol, num_of_days):
     c = Call(symbol)
@@ -159,13 +159,16 @@ def range_data_from_symbol(symbol, ndays=7, sigma=1.15):
                     "desc": "No Data found for %s"%symbol
                 }
     try:
-        if r.hget(f'{symbol}|range|{ndays}|{sigma}','time') and (int(datetime.utcnow().strftime('%s')) - int(r.hget(f'{symbol}|range|{ndays}|{sigma}','time'))) < CACHE_TIMEOUT:
+        if is_cache_good(f'{symbol}|range|{ndays}|{sigma}'):
             return ast.literal_eval(r.hget(f'{symbol}|range|{ndays}|{sigma}','value'))
         r.hset(f'{symbol}|range|{ndays}|{sigma}','time',datetime.utcnow().strftime('%s'))
         s = Stock(symbol)
+        prob = prob_move_pct(symbol, ndays,0)
+        if "error" in prob:
+            return {"error":"no options"}
         my_tuple = get_atm_ivol(s, ndays)
         volume = stock_volume(symbol, ndays)
-        prob = prob_move_pct(symbol, ndays,0)
+
         return_dict["symbol"] = symbol
         return_dict["desc"] = s.name
         return_dict["price"] = s.price
@@ -203,113 +206,132 @@ def kelly_fraction(win_prob : float, win_loss_ratio:float)->float:
 
 def best_call_trades(symbol, num_of_days):
     symbol=symbol.upper()
-    if r.hget(f'{symbol}|calltrade|{num_of_days}','time') and (int(datetime.utcnow().strftime('%s')) - int(r.hget(f'{symbol}|calltrade|{num_of_days}','time'))) < CACHE_TIMEOUT:
+    if is_cache_good(f'{symbol}|calltrade|{num_of_days}'):
         return ast.literal_eval(r.hget(f'{symbol}|calltrade|{num_of_days}','value'))
-    c = Call(symbol)
-    range_dict = range_data_from_symbol(symbol, num_of_days)
-    curr_date = str(datetime.date(datetime.now()))
-    expiries = c.expirations
-    expiry_to_use = expiries[0]
-    for i in expiries:
-        days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
-        expiry_to_use = i
-        if days_to_exp >= num_of_days:
-            break
-    c = Call(symbol,d=int(expiry_to_use[0:2]),m=int(expiry_to_use[3:5]),y=int(expiry_to_use[6:10]))
-    counter = 0
-    spread_list = []
-    strikes = c.strikes
-    for i in strikes:
-        if i >= range_dict["high_range"] and counter < 10:
-            counter = counter+1
-            c.set_strike(i)
-            spread_list.append({'strike':i,'bid':c.bid,'ask':c.ask,'last':c.price,'using_last':'false','delta':c.delta()})
-    max_amt = 0
-    max_call_amt = 0
-    best_spread = {}
-    best_call_written = {}
+    return_dict={"error":"no options"}
+    try:
+        c = Call(symbol)
+        range_dict = range_data_from_symbol(symbol, num_of_days)
+        curr_date = str(datetime.date(datetime.now()))
+        expiries = c.expirations
+        expiry_to_use = expiries[0]
+        for i in expiries:
+            days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
+            expiry_to_use = i
+            if days_to_exp >= num_of_days:
+                break
+        c = Call(symbol,d=int(expiry_to_use[0:2]),m=int(expiry_to_use[3:5]),y=int(expiry_to_use[6:10]))
+        counter = 0
+        spread_list = []
+        strikes = c.strikes
+        for i in strikes:
+            if i >= range_dict["high_range"] and counter < 10:
+                counter = counter+1
+                c.set_strike(i)
+                spread_list.append({'strike':i,'bid':c.bid,'ask':c.ask,'last':c.price,'using_last':'false','delta':c.delta()})
+        max_amt = 0
+        max_call_amt = 0
+        best_spread = {}
+        best_call_written = {}
 
-    for i in spread_list:
-        #for call
-        prob_winning_call = 1 - i['delta'] # Not expiring in the money
-        i['using_last']='false'
-        if i['bid'] == 0 and i['ask'] == 0:
-            i['bid'] = i['last']
-            i['ask'] = i['last']
-            i['using_last']='true'
-        premium_call = i['bid']
-        call_win_amt = premium_call*prob_winning_call
-        if call_win_amt > max_call_amt:
-            max_call_amt = call_win_amt
-            best_call_written = i
-        for j in spread_list:
-            if i['strike'] < j['strike']:
-                #for spread
-                premium_per_dollar = (i['bid']-j['ask'])/(j['strike']-i['strike'])
-                spread_using_last = 'false'
-                if i['using_last'] == 'true' or  j['using_last'] == 'true':
-                    spread_using_last = 'true'
-                prob_winning_spread = 1 - j['delta']
-                win_amt = premium_per_dollar*prob_winning_spread
-                if win_amt > max_amt:
-                    max_amt = win_amt
-                    if spread_using_last == 'true':
-                        best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['last'], 'premium_paid':j['last'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
-                    else:
-                        best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['bid'],'premium_paid':j['ask'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
+        for i in spread_list:
+            #for call
+            prob_winning_call = 1 - i['delta'] # Not expiring in the money
+            i['using_last']='false'
+            if i['bid'] == 0 and i['ask'] == 0:
+                i['bid'] = i['last']
+                i['ask'] = i['last']
+                i['using_last']='true'
+            premium_call = i['bid']
+            call_win_amt = premium_call*prob_winning_call
+            if call_win_amt > max_call_amt:
+                max_call_amt = call_win_amt
+                best_call_written = i
+            for j in spread_list:
+                if i['strike'] < j['strike']:
+                    #for spread
+                    premium_per_dollar = (i['bid']-j['ask'])/(j['strike']-i['strike'])
+                    spread_using_last = 'false'
+                    if i['using_last'] == 'true' or  j['using_last'] == 'true': #If any leg uses last mark spread as last
+                        spread_using_last = 'true'
+                    prob_winning_spread = 1 - j['delta']
+                    win_amt = premium_per_dollar*prob_winning_spread
+                    if win_amt > max_amt:
+                        max_amt = win_amt
+                        if spread_using_last == 'true':
+                            best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['last'], 'premium_paid':j['last'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
+                        else:
+                            best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['bid'],'premium_paid':j['ask'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
 
-    best_call_written['expiry'] = expiry_to_use
-    return_dict = {'best_spread':best_spread,'best_call':best_call_written}
-    if best_spread and best_call_written:
-        r.hset(f'{symbol}|calltrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
-        r.hset(f'{symbol}|calltrade|{num_of_days}','value',str(return_dict))
-    return return_dict
+        best_call_written['expiry'] = expiry_to_use
+        return_dict = {'best_spread':best_spread,'best_call':best_call_written}
+        if best_spread and best_call_written:
+            r.hset(f'{symbol}|calltrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
+            r.hset(f'{symbol}|calltrade|{num_of_days}','value',str(return_dict))
+            return return_dict
+    except:
+        return return_dict
 
 def prob_move_pct(symbol:str, n_days:int, percent:float):
     symbol=symbol.upper()
-    if r.hget(f'{symbol}|pmovepct|{n_days}|{percent}','time') and (int(datetime.utcnow().strftime('%s')) - int(r.hget(f'{symbol}|pmovepct|{n_days}|{percent}','time'))) < CACHE_TIMEOUT:
+    if is_cache_good(f'{symbol}|pmovepct|{n_days}|{percent}'):
         return ast.literal_eval(r.hget(f'{symbol}|pmovepct|{n_days}|{percent}','value'))
-    c = Call(symbol)
-    curr_date = str(datetime.date(datetime.now()))
-    expiries = c.expirations
-    expiry_to_use = expiries[0]
-    for i in expiries:
-        days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
-        expiry_to_use = i
-        if days_to_exp >= n_days:
-            break
-    my_delta = get_delta(symbol, percent, expiry_to_use)
-    return_dict = {"move_percent":percent, 'expiry':expiry_to_use, "prob_down":my_delta['delta_down'],"prob_up":my_delta['delta_up'] }
-    r.hset(f'{symbol}|pmovepct|{n_days}|{percent}','time',datetime.utcnow().strftime('%s'))
-    r.hset(f'{symbol}|pmovepct|{n_days}|{percent}','value',str(return_dict))
-    return return_dict
+    return_dict={"error":"no options"}
+    try:
+        c = Call(symbol)
+        curr_date = str(datetime.date(datetime.now()))
+        expiries = c.expirations
+        expiry_to_use = expiries[0]
+        for i in expiries:
+            days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
+            expiry_to_use = i
+            if days_to_exp >= n_days:
+                break
+        my_delta = get_delta(symbol, percent, expiry_to_use)
+        return_dict = {"move_percent":percent, 'expiry':expiry_to_use, "prob_down":my_delta['delta_down'],"prob_up":my_delta['delta_up'] }
+        r.hset(f'{symbol}|pmovepct|{n_days}|{percent}','time',datetime.utcnow().strftime('%s'))
+        r.hset(f'{symbol}|pmovepct|{n_days}|{percent}','value',str(return_dict))
+        return return_dict
+
+    except:
+        return return_dict
 
 def prob_move_sigma(symbol:str, n_days:int, sigma_fraction_to_use:float):
-    c = Call(symbol)
-    curr_date = str(datetime.date(datetime.now()))
-    expiries = c.expirations
-    expiry_to_use = expiries[0]
-    my_n_days = 0
-    for i in expiries:
-        days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
-        expiry_to_use = i
-        my_n_days = days_to_exp
-        if days_to_exp >= n_days:
-            break
-    my_tuple = get_atm_ivol(Stock(symbol), my_n_days)
-    my_percent = my_tuple[1]*100*sigma_fraction_to_use
-    my_delta = get_delta(symbol, my_percent, expiry_to_use)
-    prob_down = my_delta['delta_down']
-    prob_up = my_delta['delta_up']
-    norm_prob_down = 0
-    norm_prob_up = 0
-    if prob_up > prob_down:
-        norm_prob_down = 0.5
-        norm_prob_up = prob_up*0.5/prob_down
-    else:
-        norm_prob_up = 0.5
-        norm_prob_down = prob_down*0.5/prob_up
-    return {"move_percent":my_percent, 'expiry':expiry_to_use, "prob_down":prob_down,"norm_prob_down":norm_prob_down,"prob_up":prob_up, "norm_prob_up":norm_prob_up}
+    symbol=symbol.upper()
+    if is_cache_good(f'{symbol}|pmovesigma|{n_days}|{sigma_fraction_to_use}'):
+        return ast.literal_eval(r.hget(f'{symbol}|pmovesigma|{n_days}|{sigma_fraction_to_use}','value'))
+    return_dict={"error":"no options"}
+    try:
+        c = Call(symbol)
+        expiries = c.expirations
+        curr_date = str(datetime.date(datetime.now()))
+        expiry_to_use = expiries[0]
+        my_n_days = 0
+        for i in expiries:
+            days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
+            expiry_to_use = i
+            my_n_days = days_to_exp
+            if days_to_exp >= n_days:
+                break
+        my_tuple = get_atm_ivol(Stock(symbol), my_n_days)
+        my_percent = my_tuple[1]*100*sigma_fraction_to_use
+        my_delta = get_delta(symbol, my_percent, expiry_to_use)
+        prob_down = my_delta['delta_down']
+        prob_up = my_delta['delta_up']
+        norm_prob_down = 0
+        norm_prob_up = 0
+        if prob_up > prob_down:
+            norm_prob_down = 0.5
+            norm_prob_up = prob_up*0.5/prob_down
+        else:
+            norm_prob_up = 0.5
+            norm_prob_down = prob_down*0.5/prob_up
+        return_dict = {"move_percent":my_percent, 'expiry':expiry_to_use, "prob_down":prob_down,"norm_prob_down":norm_prob_down,"prob_up":prob_up, "norm_prob_up":norm_prob_up}
+        r.hset(f'{symbol}|pmovesigma|{n_days}|{sigma_fraction_to_use}','time',datetime.utcnow().strftime('%s'))
+        r.hset(f'{symbol}|pmovesigma|{n_days}|{sigma_fraction_to_use}','value',str(return_dict))
+        return return_dict
+    except:
+        return return_dict
 
 def implied_forward(symbol, n_days):
     s = Stock(symbol)
@@ -340,63 +362,69 @@ def implied_forward(symbol, n_days):
 
 def best_put_trades(symbol, num_of_days):
     symbol=symbol.upper()
-    if r.hget(f'{symbol}|puttrade|{num_of_days}','time') and (int(datetime.utcnow().strftime('%s')) - int(r.hget(f'{symbol}|puttrade|{num_of_days}','time'))) < CACHE_TIMEOUT:
+    if is_cache_good(f'{symbol}|puttrade|{num_of_days}'):
         return ast.literal_eval(r.hget(f'{symbol}|puttrade|{num_of_days}','value'))
-
-    p = Put(symbol)
-    range_dict = range_data_from_symbol(symbol, num_of_days)
-    curr_date = str(datetime.date(datetime.now()))
-    expiries = p.expirations
-    expiry_to_use = expiries[0]
-    for i in expiries:
-        days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
-        expiry_to_use = i
-        if days_to_exp >= num_of_days:
-            break
-    p = Put(symbol,d=int(expiry_to_use[0:2]),m=int(expiry_to_use[3:5]),y=int(expiry_to_use[6:10]))
-    counter = 0
-    spread_list = []
-    strikes = p.strikes
-    for i in strikes:
-        if i <= range_dict["high_range"] and counter < 15:
-            counter = counter+1
-            p.set_strike(i)
-            spread_list.append({'strike':i,'bid':p.bid,'ask':p.ask,'delta':-p.delta()})
-    max_amt = 0
-    max_put_amt = 0
-    best_spread = {}
-    best_put_written = {}
-    spread_list.reverse()
-    for i in spread_list:
-        #for call
-        prob_winning_put = 1 - i['delta']
-        premium_put = i['bid']
-        put_win_amt = premium_put*prob_winning_put
-        if put_win_amt > max_put_amt:
-            max_put_amt = put_win_amt
-            best_put_written = i
-        for j in spread_list:
-            if i['strike'] > j['strike']:
-                #for spread
-                premium_per_dollar = (i['bid']-j['ask'])/abs(j['strike']-i['strike'])
-                prob_winning_spread = 1 - j['delta']
-                win_amt = premium_per_dollar*prob_winning_spread
-                if win_amt > max_amt:
-                    max_amt = win_amt
-                    best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
-    best_put_written['expiry'] = expiry_to_use
-    return_dict = {'best_spread':best_spread,'best_put':best_put_written}
-    if best_spread and best_put_written:
-        r.hset(f'{symbol}|puttrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
-        r.hset(f'{symbol}|puttrade|{num_of_days}','value',str(return_dict))
-    return return_dict
+    return_dict={"error":"no options"}
+    try:
+        p = Put(symbol)
+        range_dict = range_data_from_symbol(symbol, num_of_days)
+        curr_date = str(datetime.date(datetime.now()))
+        expiries = p.expirations
+        expiry_to_use = expiries[0]
+        for i in expiries:
+            days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
+            expiry_to_use = i
+            if days_to_exp >= num_of_days:
+                break
+        p = Put(symbol,d=int(expiry_to_use[0:2]),m=int(expiry_to_use[3:5]),y=int(expiry_to_use[6:10]))
+        counter = 0
+        spread_list = []
+        strikes = p.strikes
+        for i in strikes:
+            if i <= range_dict["high_range"] and counter < 15:
+                counter = counter+1
+                p.set_strike(i)
+                spread_list.append({'strike':i,'bid':p.bid,'ask':p.ask,'delta':-p.delta()})
+        max_amt = 0
+        max_put_amt = 0
+        best_spread = {}
+        best_put_written = {}
+        spread_list.reverse()
+        for i in spread_list:
+            #for call
+            prob_winning_put = 1 - i['delta']
+            premium_put = i['bid']
+            put_win_amt = premium_put*prob_winning_put
+            if put_win_amt > max_put_amt:
+                max_put_amt = put_win_amt
+                best_put_written = i
+            for j in spread_list:
+                if i['strike'] > j['strike']:
+                    #for spread
+                    premium_per_dollar = (i['bid']-j['ask'])/abs(j['strike']-i['strike'])
+                    prob_winning_spread = 1 - j['delta']
+                    win_amt = premium_per_dollar*prob_winning_spread
+                    if win_amt > max_amt:
+                        max_amt = win_amt
+                        best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
+        best_put_written['expiry'] = expiry_to_use
+        return_dict = {'best_spread':best_spread,'best_put':best_put_written}
+        if best_spread and best_put_written:
+            r.hset(f'{symbol}|puttrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
+            r.hset(f'{symbol}|puttrade|{num_of_days}','value',str(return_dict))
+            return return_dict
+    except:
+        return return_dict
 
 
 def amt_to_invest(symbol:str,n_days:int):
     symbol=symbol.upper()
-    if r.hget(f'{symbol}|kelly|{n_days}','time') and (int(datetime.utcnow().strftime('%s')) - int(r.hget(f'{symbol}|kelly|{n_days}','time'))) < CACHE_TIMEOUT:
+    if is_cache_good(f'{symbol}|kelly|{n_days}'):
         return ast.literal_eval(r.hget(f'{symbol}|kelly|{n_days}','value'))
+
     prob_dict = prob_move_pct(symbol, n_days,0)
+    if "error" in prob_dict:
+        return {"error":"no options"}
     #print(prob_dict)
     curr_date = str(datetime.date(datetime.now()))
     days_to_exp = abs(datetime.strptime(prob_dict['expiry'],'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
@@ -452,3 +480,20 @@ def stock_volume (symbol:str, n_days:int):
     #     r.hset(symbol,'date', curr_date)
     #     r.hset(symbol,'avg_10d_volume', s.info['averageVolume10days'])
     return {'symbol':symbol, 'percentile':p, 'volume':today_volume, 'avg_10d_volume':info['averageVolume10days']}
+
+def is_cache_good(cache_key):
+    d1 = datetime.now()
+    curr_date = str(date.today())
+    open_time = d1.replace(hour=9)
+    open_time = open_time.replace(minute=30)
+    close_time = d1.replace(hour=16)
+    close_time = close_time.replace(minute=00)
+    now_in_sec = int(datetime.utcnow().strftime('%s'))
+    print(f'************{cache_key}*****')
+    if r.hget(curr_date,"trading_date") == "yes" and d1 >= open_time and r.hget(cache_key,'time'):
+        if d1 <= close_time:
+            if (now_in_sec - int(r.hget(cache_key,'time'))) < CACHE_TIMEOUT:
+                return True
+        elif (int(r.hget(cache_key,'time')) > int(close_time.strftime('%s'))):
+            return True
+    return False
