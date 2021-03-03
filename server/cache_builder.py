@@ -46,6 +46,6 @@ while True:
         run_caching()
     elif not r.hget(curr_date,"cache_exists"):
         r.hset(curr_date,"cache_exists","yes")
-        run_chaching()
+        run_caching()
     check_is_trading()
     time.sleep(CACHE_TIMEOUT)
