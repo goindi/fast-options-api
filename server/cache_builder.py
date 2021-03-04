@@ -12,7 +12,7 @@ from calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_
 nyse = mcal.get_calendar('NYSE')
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 CACHE_TIMEOUT = 1800
-SYMBOL_LIST = ["AAL","AAPL","ACB","AI","AMC","AMD","AMZN","APHA","ARKK","ATNX","B","BA","BABA","BAC","BB","BIG","BLNK","BNGO","C","CCIV","CCL","CLOV","COST","CRSR","DKNG","DNN","E","EEM","ET","EWZ","F","FB","FSLY","FSR","FUBO","FXI","G","GDX","GE","GLD","GM","GME","GO","GOLD","GSAT","GTT","HUGE","HYG","HYLN","IMO","IPO","IWM","K","KMPH","L","LAZR","LI","LMND","MARA","MSFT","MU","MVIS","NIO","NOK","NVDA","PINS","PLTR","PLUG","PSTH","PTON","QQQ","R","RIOT","RKT","RSI","SE","SENS","SI","SKT","SLV","SNAP","SNDL","SOS","SOXL","SPCE","SPY","SQ","SQQQ","T","TD","TGT","TLRY","TLT","TSLA","TSM","TV","TWTR","TXMD","USD","UUUU","UVXY","UWM","UWMC","V","VXX","WKHS","X","XL","XLE","XLF","XPEV","ZM"]
+SYMBOL_LIST = ["AAL","AAPL","ACB","AI","AMC","AMD","AMZN","APHA","ARKK","ATNX","B","BA","BABA","BAC","BB","BIG","BLNK","BNGO","C","CCIV","CCL","CLOV","COST","CRSR","DKNG","DNN","E","EEM","ET","EWZ","F","FB","FSLY","FSR","FUBO","FXI","G","GDX","GE","GLD","GM","GME","GO","GOLD","GSAT","GTT","HUGE","HYG","HYLN","IMO","IPO","IWM","K","KMPH","L","LAZR","LI","LMND","MARA","MSFT","MU","MVIS","NIO","NOK","NVDA","OCGN","PINS","PLTR","PLUG","PSTH","PTON","QQQ","R","RIOT","RKT","RSI","SE","SENS","SI","SKT","SLV","SNAP","SNDL","SOS","SOXL","SPCE","SPY","SQ","SQQQ","T","TD","TGT","TLRY","TLT","TSLA","TSM","TV","TWTR","TXMD","USD","UUUU","UVXY","UWM","UWMC","V","VXX","WKHS","X","XL","XLE","XLF","XPEV","ZM"]
 
 a = nyse.valid_days(start_date=str(date.today()), end_date=str(date.today()+timedelta(100)))
 TRADING_DAYS = [str(i.date()) for i in a]
