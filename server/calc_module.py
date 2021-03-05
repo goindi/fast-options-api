@@ -460,25 +460,17 @@ def stock_volume (symbol:str, n_days:int):
     d1 = datetime.now()
     info = s.info
     if is_trading == "yes":
-        print("here2")
         d2 = d1.replace(hour=9)
         d2 = d2.replace(minute=30)
         if d1 > d2:
             delta = d1 - d2
-            print(delta.total_seconds())
             if delta.total_seconds() >= 390*60:
-                print('here')
                 weight = 1
-                #r.hset(curr_date,"trading")
             else:
                 weight = (390*60)/delta.total_seconds()
 
     today_volume = info['volume']*weight
     p = stats.percentileofscore(s.history()[-n_days:].Volume,today_volume)
-    # avg_10d_volume = 0
-    # if r.hget(symbol,'date') != curr_date or not r.hget(symbol,'avg_10d_volume') :
-    #     r.hset(symbol,'date', curr_date)
-    #     r.hset(symbol,'avg_10d_volume', s.info['averageVolume10days'])
     return {'symbol':symbol, 'percentile':p, 'volume':today_volume, 'avg_10d_volume':info['averageVolume10days']}
 
 def is_cache_good(cache_key):
@@ -492,7 +484,6 @@ def is_cache_good(cache_key):
     print(f'************{cache_key}*****')
     if r.hget(cache_key,'time'):
         if r.hget(curr_date,"trading_date") == "yes" :
-            print("here33")
             if d1 >= open_time and d1 <= close_time:
                 if (now_in_sec - int(r.hget(cache_key,'time'))) < CACHE_TIMEOUT:
                     return True

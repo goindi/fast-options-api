@@ -90,8 +90,10 @@ def get_best_trade(symbol_list: list, days:int, sigma:float ) -> dict:
     down_expiry = ""
 
     for i in symbol_list:
-        print(i)
-        yolo_dict[i] = prob_move_sigma(i, days, sigma)
+        x = prob_move_sigma(i, days, sigma)
+        if "error" in x:
+            continue
+        yolo_dict[i] = x
         if yolo_dict[i]["norm_prob_up"] > max_up_prob:
             max_up_prob = yolo_dict[i]["norm_prob_up"]
             max_up_symbol = i
