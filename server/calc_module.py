@@ -9,6 +9,7 @@ import pandas as pd
 from scipy.stats import norm
 import ast
 import redis
+from server.cache_module import is_cache_good
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 CACHE_TIMEOUT = 1800
 
@@ -468,30 +469,6 @@ def stock_volume (symbol:str, n_days:int):
                 weight = 1
             else:
                 weight = (390*60)/delta.total_seconds()
-
     today_volume = info['volume']*weight
     p = stats.percentileofscore(s.history()[-n_days:].Volume,today_volume)
     return {'symbol':symbol, 'percentile':p, 'volume':today_volume, 'avg_10d_volume':info['averageVolume10days']}
-
-def is_cache_good(cache_key):
-    d1 = datetime.now()
-    curr_date = str(date.today())
-    open_time = d1.replace(hour=9)
-    open_time = open_time.replace(minute=30)
-    close_time = d1.replace(hour=16)
-    close_time = close_time.replace(minute=00)
-    now_in_sec = int(datetime.utcnow().strftime('%s'))
-    print(f'************{cache_key}*****')
-    if r.hget(cache_key,'time'):
-        if r.hget(curr_date,"trading_date") == "yes" :
-            if d1 >= open_time and d1 <= close_time:
-                if (now_in_sec - int(r.hget(cache_key,'time'))) < CACHE_TIMEOUT:
-                    return True
-            elif d1 > close_time and int(r.hget(cache_key,'time')) > int(close_time.strftime('%s')):
-                return True
-            elif d1 < open_time and (now_in_sec - int(r.hget(cache_key,'time'))) < 3600*4: #4 hours
-                return True
-            print(r.hget(cache_key,'time'))
-            print(close_time.strftime('%s'))
-
-    return False
