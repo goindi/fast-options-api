@@ -2,16 +2,16 @@ import requests
 import pandas as pd
 import flair
 import re
+import yaml
+
+
 
 whitespace = re.compile(r"\s+")
 web_address = re.compile(r"(?i)http(s):\/\/[a-z0-9.~_\-\/]+")
 user = re.compile(r"(?i)@[a-z0-9_]+")
 
 api_url = 'https://api.twitter.com/1.1/search/tweets.json'
-bearer_token = 'AAAAAAAAAAAAAAAAAAAAACOFNQEAAAAA%2Fo7YJMJtqrtW2HQNu%2B%2F7vAsXYVg%3DuGHJTPDmhhbaPTysO8jRW9SNETvZ9h2RKFCN3Y3It65v7onDEd'
-api_key = 'nh5zRop2FJaK1QHfVOPvMzNhS'
-api_secret_key = 'Bg2i5z2T7Dgb8RxpJ0hsOoJd4TM00Uw0lVasG1wqg9tZTuXRWc'
-
+bearer_token = ''
 def get_data(tweet):
     data = {
         'id': tweet['id_str'],
@@ -37,6 +37,11 @@ def find_twitter_sentiment(symbol:str, num_of_tweets:int = 10):
     'lang': 'en',
     'count': num_of_tweets
     }
+    with open('twitter_config.yml') as file:
+        dic = yaml.load(file, Loader=yaml.FullLoader)
+        bearer_token = dic['bearer_token']
+
+
     response = requests.get(
         api_url,
         params=params,
