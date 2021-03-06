@@ -35,6 +35,7 @@ def run_caching():
 
 
 while True:
+    check_is_trading()
     d1 = datetime.now()
     curr_date = str(date.today())
     open_time = d1.replace(hour=9)
@@ -47,5 +48,4 @@ while True:
     elif not r.hget(curr_date,"cache_exists"):
         r.hset(curr_date,"cache_exists","yes")
         run_caching()
-    check_is_trading()
     time.sleep(CACHE_TIMEOUT)
