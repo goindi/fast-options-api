@@ -37,7 +37,7 @@ def find_twitter_sentiment(symbol:str, num_of_tweets:int = 10):
     'lang': 'en',
     'count': num_of_tweets
     }
-    with open('twitter_config.yml') as file:
+    with open('twitter_config.yml','r') as file:
         dic = yaml.load(file, Loader=yaml.FullLoader)
         bearer_token = dic['bearer_token']
 
