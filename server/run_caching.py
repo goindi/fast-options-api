@@ -5,9 +5,8 @@ import ast
 import redis
 import time
 from datetime import datetime, timedelta
-from calc_module import range_data_from_symbol, best_call_trades, best_put_trades, stock_volume
-from calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details
-from cache_module import check_is_trading
+#from cache_module import check_is_trading
+from calc_module import range_data_from_symbol, prob_move_pct,  amt_to_invest, check_is_trading
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 CACHE_TIMEOUT = 1800
 SYMBOL_LIST = ["AAL","AAPL","ACB","AI","AMC","AMD","AMZN","APHA","ARKK","ATNX","B","BA","BABA","BAC","BB","BIG","BLNK","BNGO","C","CCIV","CCL","CLOV","COST","CRSR","DKNG","DNN","E","EEM","ET","EWZ","F","FB","FSLY","FSR","FUBO","FXI","G","GDX","GE","GLD","GM","GME","GO","GOLD","GSAT","GTT","HUGE","HYG","HYLN","IMO","IPO","IWM","K","KMPH","L","LAZR","LI","LMND","MARA","MSFT","MU","MVIS","NIO","NOK","NVDA","OCGN","PINS","PLTR","PLUG","PSTH","PTON","QQQ","R","RIOT","RKT","RSI","SE","SENS","SI","SKT","SLV","SNAP","SNDL","SOS","SOXL","SPCE","SPY","SQ","SQQQ","T","TD","TGT","TLRY","TLT","TSLA","TSM","TV","TWTR","TXMD","USD","UUUU","UVXY","UWM","UWMC","V","VXX","WKHS","X","XL","XLE","XLF","XPEV","ZM"]
