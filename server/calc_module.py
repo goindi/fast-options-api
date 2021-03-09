@@ -270,7 +270,7 @@ def best_call_trades(symbol, num_of_days):
                             best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['bid'],'premium_paid':j['ask'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
 
         best_call_written['expiry'] = expiry_to_use
-        return_dict = {'best_spread':best_spread,'best_call':best_call_written}
+        return_dict = {"symbol":symbol,'best_spread':best_spread,'best_call':best_call_written}
         if best_spread and best_call_written:
             r.hset(f'{symbol}|calltrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
             r.hset(f'{symbol}|calltrade|{num_of_days}','value',str(return_dict))
@@ -294,7 +294,7 @@ def prob_move_pct(symbol:str, n_days:int, percent:float):
             if days_to_exp >= n_days:
                 break
         my_delta = get_delta(symbol, percent, expiry_to_use)
-        return_dict = {"move_percent":percent, 'expiry':expiry_to_use, "prob_down":my_delta['delta_down'],"prob_up":my_delta['delta_up'] }
+        return_dict = {"symbol":symbol,"move_percent":percent, 'expiry':expiry_to_use, "prob_down":my_delta['delta_down'],"prob_up":my_delta['delta_up'] }
         r.hset(f'{symbol}|pmovepct|{n_days}|{percent}','time',datetime.utcnow().strftime('%s'))
         r.hset(f'{symbol}|pmovepct|{n_days}|{percent}','value',str(return_dict))
         return return_dict
@@ -332,7 +332,7 @@ def prob_move_sigma(symbol:str, n_days:int, sigma_fraction_to_use:float):
         else:
             norm_prob_up = 0.5
             norm_prob_down = prob_down*0.5/prob_up
-        return_dict = {"move_percent":my_percent, 'expiry':expiry_to_use, "prob_down":prob_down,"norm_prob_down":norm_prob_down,"prob_up":prob_up, "norm_prob_up":norm_prob_up}
+        return_dict = {"symbol":symbol, "move_percent":my_percent, 'expiry':expiry_to_use, "prob_down":prob_down,"norm_prob_down":norm_prob_down,"prob_up":prob_up, "norm_prob_up":norm_prob_up}
         r.hset(f'{symbol}|pmovesigma|{n_days}|{sigma_fraction_to_use}','time',datetime.utcnow().strftime('%s'))
         r.hset(f'{symbol}|pmovesigma|{n_days}|{sigma_fraction_to_use}','value',str(return_dict))
         return return_dict
@@ -364,7 +364,7 @@ def implied_forward(symbol, n_days):
         call.set_strike(bracket_dict['higher_strike'])
         put.set_strike(bracket_dict['higher_strike'])
         forward = bracket_dict['higher_strike'] - put.price + call.price
-    return {"forward_price":forward,"current_price":s.price, "expiry":expiry_to_use}
+    return {"symbol":symbol,"forward_price":forward,"current_price":s.price, "expiry":expiry_to_use}
 
 def best_put_trades(symbol, num_of_days):
     symbol=symbol.upper()
@@ -414,7 +414,7 @@ def best_put_trades(symbol, num_of_days):
                         max_amt = win_amt
                         best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
         best_put_written['expiry'] = expiry_to_use
-        return_dict = {'best_spread':best_spread,'best_put':best_put_written}
+        return_dict = {"symbol":symbol,'best_spread':best_spread,'best_put':best_put_written}
         if best_spread and best_put_written:
             r.hset(f'{symbol}|puttrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
             r.hset(f'{symbol}|puttrade|{num_of_days}','value',str(return_dict))
@@ -434,7 +434,7 @@ def amt_to_invest(symbol:str,n_days:int):
     #print(prob_dict)
     curr_date = str(datetime.date(datetime.now()))
     days_to_exp = abs(datetime.strptime(prob_dict['expiry'],'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
-    return_dict = {"kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry'], "prob_up":prob_dict['prob_up'], "kelly2":prob_dict['prob_up']-0.5}
+    return_dict = {"symbol":symbol, "kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry'], "prob_up":prob_dict['prob_up'], "kelly2":prob_dict['prob_up']-0.5}
     r.hset(f'{symbol}|kelly|{n_days}','time',datetime.utcnow().strftime('%s'))
     r.hset(f'{symbol}|kelly|{n_days}','value',str(return_dict))
     return return_dict
@@ -455,7 +455,7 @@ def div_details(symbol:str):
         div = y.dividends[-1]
         div_date = str(y.dividends.index[-1])[0:10]
         div_yld = y.info['dividendYield']
-    return {'div':div, 'div_date':div_date, 'div_yld':div_yld}
+    return {"symbol":symbol,'div':div, 'div_date':div_date, 'div_yld':div_yld}
 
 def stock_volume (symbol:str, n_days:int):
     symbol = symbol.upper()
