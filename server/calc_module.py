@@ -7,6 +7,7 @@ import yfinance as yf
 #import trading_calendars as tc
 import pandas_market_calendars as mcal
 import pandas as pd
+import numpy as np
 from scipy.stats import norm
 import ast
 import redis
@@ -434,7 +435,7 @@ def amt_to_invest(symbol:str,n_days:int):
     #print(prob_dict)
     curr_date = str(datetime.date(datetime.now()))
     days_to_exp = abs(datetime.strptime(prob_dict['expiry'],'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
-    return_dict = {"symbol":symbol, "kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry'], "prob_up":prob_dict['prob_up'], "kelly2":prob_dict['prob_up']-0.5}
+    return_dict = {"symbol":symbol, "kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry'], "prob_up":prob_dict['prob_up'],"prob_down":prob_dict['prob_down'], "kelly2":prob_dict['prob_up']-0.5}
     r.hset(f'{symbol}|kelly|{n_days}','time',datetime.utcnow().strftime('%s'))
     r.hset(f'{symbol}|kelly|{n_days}','value',str(return_dict))
     return return_dict
@@ -456,6 +457,36 @@ def div_details(symbol:str):
         div_date = str(y.dividends.index[-1])[0:10]
         div_yld = y.info['dividendYield']
     return {"symbol":symbol,'div':div, 'div_date':div_date, 'div_yld':div_yld}
+
+def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
+    symbol = symbol.upper()
+    if symbol in ['BTC','ETH']:
+        symbol = f'{symbol}-USD'
+    return_dict = {"symbol": "Error",
+                    "desc": "No Data found for %s"%symbol
+                }
+    try:
+        y = yf.Ticker(symbol)
+        info = y.info
+        my_df = y.history().Close[-21:]
+        curr_px = my_df[-1]
+        std_dev = np.std(my_df[-21:-1])
+        n_days_sigma = std_dev*math.sqrt(n_days)
+        return_dict["symbol"] = symbol
+        return_dict["desc"] = info['shortName']
+        return_dict["price"] = curr_px
+        return_dict["ivol"] = std_dev # realized vol.
+        return_dict["low_range"] = curr_px - n_days_sigma*sigma
+        return_dict["high_range"] = curr_px + n_days_sigma*sigma
+
+        return_dict["today_volume"] =info['volume24Hr']
+        return_dict["avg_10d_volume"] = info["averageVolume10days"]
+        return return_dict
+    except:
+        return return_dict
+
+
+
 
 def stock_volume (symbol:str, n_days:int):
     symbol = symbol.upper()

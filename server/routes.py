@@ -3,6 +3,7 @@ from fastapi.encoders import jsonable_encoder
 from datetime import datetime
 from server.calc_module import range_data_from_symbol, best_call_trades, best_put_trades, stock_volume
 from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details
+from server.calc_module import  crypto_range_data_from_symbol
 from server.twitter_sentiment import find_twitter_sentiment
 
 tags_metadata = [
@@ -172,3 +173,7 @@ async def get_div_details(symbol: str) -> dict:
 @router.get("/sentiment/twitter/{symbol}")
 async def get_twitter_sentiments_details(symbol: str, num_of_tweets:int=10) -> dict:
     return find_twitter_sentiment(symbol,num_of_tweets)
+
+@router.get("/crypto/range/{symbol}")
+async def get_range_data(symbol: str, days:int = 7, sigma:float = 1.15) -> dict:
+    return crypto_range_data_from_symbol(symbol,days,sigma)
