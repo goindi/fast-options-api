@@ -236,6 +236,7 @@ def best_call_trades(symbol, num_of_days):
                 counter = counter+1
                 c.set_strike(i)
                 spread_list.append({'strike':i,'bid':c.bid,'ask':c.ask,'last':c.price,'using_last':'false','delta':c.delta()})
+
         max_amt = 0
         max_call_amt = 0
         best_spread = {}
@@ -243,6 +244,7 @@ def best_call_trades(symbol, num_of_days):
 
         for i in spread_list:
             #for call
+            
             prob_winning_call = 1 - i['delta'] # Not expiring in the money
             i['using_last']='false'
             if i['bid'] == 0 and i['ask'] == 0:
@@ -254,29 +256,34 @@ def best_call_trades(symbol, num_of_days):
             if call_win_amt > max_call_amt:
                 max_call_amt = call_win_amt
                 best_call_written = i
+                
             for j in spread_list:
                 if i['strike'] < j['strike']:
                     #for spread
+                   
                     premium_per_dollar = (i['bid']-j['ask'])/(j['strike']-i['strike'])
                     spread_using_last = 'false'
                     if i['using_last'] == 'true' or  j['using_last'] == 'true': #If any leg uses last mark spread as last
                         spread_using_last = 'true'
                     prob_winning_spread = 1 - j['delta']
                     win_amt = premium_per_dollar*prob_winning_spread
+                    
                     if win_amt > max_amt:
                         max_amt = win_amt
                         if spread_using_last == 'true':
                             best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['last'], 'premium_paid':j['last'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
                         else:
                             best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['bid'],'premium_paid':j['ask'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
-
+        
         best_call_written['expiry'] = expiry_to_use
         return_dict = {"symbol":symbol,'best_spread':best_spread,'best_call':best_call_written}
-        if best_spread and best_call_written:
+        if best_spread or best_call_written:
             r.hset(f'{symbol}|calltrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
             r.hset(f'{symbol}|calltrade|{num_of_days}','value',str(return_dict))
-            return return_dict
-    except:
+        return return_dict
+    except Exception as e:
+        print(e)
+
         return return_dict
 
 def prob_move_pct(symbol:str, n_days:int, percent:float):
@@ -485,6 +492,35 @@ def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
     except:
         return return_dict
 
+def get_gamma_squeeze(symbol:str, n_days:int):
+    symbol = symbol.upper()
+    return_dict = {"symbol": "Error",
+                    "desc": "No Data found for %s"%symbol
+                }
+    try:
+        y = yf.Ticker(symbol)
+        info = y.info
+        return_dict = {"symbol":symbol}
+        return_dict['stock_float'] = info['sharesOutstanding']
+        expiry_dict = get_expiries_bracket(symbol, n_days)
+        expiry_to_use = expiry_dict['shorter_expiry']
+        if expiry_dict['shorter_weight'] < 0.5:
+            expiry_to_use = expiry_dict['longer_expiry']
+
+        expiry_to_use = f'{expiry_to_use[6:10]}-{expiry_to_use[3:5]}-{expiry_to_use[0:2]}'
+
+        o = y.option_chain(expiry_to_use)
+        df = o.calls.fillna(0)
+        df = df.sort_values(by='openInterest',ascending=False)
+        df = df.reset_index(drop=True)
+        return_dict["gamma_1"] = float(df.openInterest[0]*100)
+        return_dict["strike_1"] = float(df.strike[0])
+        return_dict["gamma_2"] = float(df.openInterest[1]*100)
+        return_dict["strike_2"] = float(df.strike[1])
+        print(return_dict)
+        return return_dict
+    except:
+        return return_dict
 
 
 
