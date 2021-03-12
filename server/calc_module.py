@@ -494,6 +494,10 @@ def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
 
 def get_gamma_squeeze(symbol:str, n_days:int):
     symbol = symbol.upper()
+
+    if is_cache_good(f'{symbol}|gamma|{n_days}'):
+        return ast.literal_eval(r.hget(f'{symbol}|gamma|{n_days}','value'))
+
     return_dict = {"symbol": "Error",
                     "desc": "No Data found for %s"%symbol
                 }
@@ -508,7 +512,7 @@ def get_gamma_squeeze(symbol:str, n_days:int):
             expiry_to_use = expiry_dict['longer_expiry']
 
         expiry_to_use = f'{expiry_to_use[6:10]}-{expiry_to_use[3:5]}-{expiry_to_use[0:2]}'
-
+        return_dict["expiry_to_use"] = expiry_to_use
         o = y.option_chain(expiry_to_use)
         df = o.calls.fillna(0)
         df = df.sort_values(by='openInterest',ascending=False)
@@ -517,7 +521,8 @@ def get_gamma_squeeze(symbol:str, n_days:int):
         return_dict["strike_1"] = float(df.strike[0])
         return_dict["gamma_2"] = float(df.openInterest[1]*100)
         return_dict["strike_2"] = float(df.strike[1])
-        print(return_dict)
+        r.hset(f'{symbol}|gamma|{n_days}','time',datetime.utcnow().strftime('%s'))
+        r.hset(f'{symbol}|gamma|{n_days}','value',str(return_dict))
         return return_dict
     except:
         return return_dict
