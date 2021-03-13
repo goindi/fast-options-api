@@ -20,6 +20,9 @@ a = nyse.valid_days(start_date=str(date.today()), end_date=str(date.today()+time
 TRADING_DAYS = [str(i.date()) for i in a]
 
 def get_expiries_bracket(symbol, num_of_days):
+    symbol=symbol.upper()
+    if is_cache_good(f'{symbol}|getexpiries|{num_of_days}'):
+        return ast.literal_eval(r.hget(f'{symbol}|getexpiries|{num_of_days}','value'))
     c = Call(symbol)
     expiries = c.expirations
     curr_date = str(datetime.date(datetime.now()))
@@ -41,7 +44,10 @@ def get_expiries_bracket(symbol, num_of_days):
     shorter_weight = 1;
     if longer_day_bound != shorter_day_bound:
         shorter_weight = (longer_day_bound - num_of_days) / (longer_day_bound - shorter_day_bound)
-    return {'shorter_expiry':shorter_expiry,'longer_expiry':longer_expiry,'shorter_day_bound':shorter_day_bound,'longer_day_bound':longer_day_bound, 'shorter_weight':shorter_weight}
+    return_dict =  {'shorter_expiry':shorter_expiry,'longer_expiry':longer_expiry,'shorter_day_bound':shorter_day_bound,'longer_day_bound':longer_day_bound, 'shorter_weight':shorter_weight}
+    r.hset(f'{symbol}|getexpiries|{num_of_days}','time',datetime.utcnow().strftime('%s'))
+    r.hset(f'{symbol}|getexpiries|{num_of_days}','value',str(return_dict))
+    return return_dict
 
 def get_strike_bracket(strikes, price_target):
     #strikes = call_object.strikes
@@ -61,9 +67,13 @@ def get_strike_bracket(strikes, price_target):
     lower_weight = 1
     if higher_strike != lower_strike:
         lower_weight = (higher_strike - price_target)/(higher_strike - lower_strike)
-    return {'lower_strike':lower_strike,'higher_strike':higher_strike, 'lower_weight':lower_weight}
+    return  {'lower_strike':lower_strike,'higher_strike':higher_strike, 'lower_weight':lower_weight}
+
 
 def get_delta(symbol:str, percent_move:float, expiry:str):
+    symbol=symbol.upper()
+    if is_cache_good(f'{symbol}|getdelta|{percent_move}{expiry}'):
+        return ast.literal_eval(r.hget(f'{symbol}|getdelta|{percent_move}{expiry}','value'))
     s = Stock(symbol)
     up_px = s.price*(1+percent_move/100)
     down_px = s.price*(1-percent_move/100)
@@ -82,7 +92,10 @@ def get_delta(symbol:str, percent_move:float, expiry:str):
     put.set_strike(down_delta_dict['higher_strike'])
     delta2 = -put.delta()*(1-down_delta_dict['lower_weight'])
     delta_down_move = delta1 + delta2
-    return {'delta_up':delta_up_move,'delta_down':delta_down_move}
+    return_dict =  {'delta_up':delta_up_move,'delta_down':delta_down_move}
+    r.hset(f'{symbol}|getdelta|{percent_move}{expiry}','time',datetime.utcnow().strftime('%s'))
+    r.hset(f'{symbol}|getdelta|{percent_move}{expiry}','value',str(return_dict))
+    return return_dict
 
 def get_nd2(symbol:str, percent_move:float, expiry:str):
     y = yf.Ticker(symbol)
@@ -137,6 +150,9 @@ def get_nd2(symbol:str, percent_move:float, expiry:str):
 def get_atm_ivol(s, ndays=30):
     #Need to fix for divs, borrow etc to find atm
     symbol = s.ticker
+    symbol=symbol.upper()
+    if is_cache_good(f'{symbol}|getatmivol|{ndays}'):
+        return ast.literal_eval(r.hget(f'{symbol}|getatmivol|{ndays}','value'))
     expiry_dict = get_expiries_bracket(symbol, ndays)
     #First Shorter One
     x = expiry_dict['shorter_expiry']
@@ -158,7 +174,11 @@ def get_atm_ivol(s, ndays=30):
     longer_ivol = lower_vol*strike_dict['lower_weight'] + higher_vol*(1-strike_dict['lower_weight'])
     implied_ivol = shorter_ivol*expiry_dict['shorter_weight'] + longer_ivol*(1-expiry_dict['shorter_weight'])
     one_sigma_move_ndays_day = implied_ivol*math.sqrt(ndays/365)
-    return (implied_ivol, one_sigma_move_ndays_day)
+
+    return_dict =  (implied_ivol, one_sigma_move_ndays_day)
+    r.hset(f'{symbol}|getatmivol|{ndays}','time',datetime.utcnow().strftime('%s'))
+    r.hset(f'{symbol}|getatmivol|{ndays}','value',str(return_dict))
+    return return_dict
 
 def range_data_from_symbol(symbol, ndays=7, sigma=1.15):
     symbol = symbol.upper()
@@ -244,7 +264,7 @@ def best_call_trades(symbol, num_of_days):
 
         for i in spread_list:
             #for call
-            
+
             prob_winning_call = 1 - i['delta'] # Not expiring in the money
             i['using_last']='false'
             if i['bid'] == 0 and i['ask'] == 0:
@@ -256,25 +276,25 @@ def best_call_trades(symbol, num_of_days):
             if call_win_amt > max_call_amt:
                 max_call_amt = call_win_amt
                 best_call_written = i
-                
+
             for j in spread_list:
                 if i['strike'] < j['strike']:
                     #for spread
-                   
+
                     premium_per_dollar = (i['bid']-j['ask'])/(j['strike']-i['strike'])
                     spread_using_last = 'false'
                     if i['using_last'] == 'true' or  j['using_last'] == 'true': #If any leg uses last mark spread as last
                         spread_using_last = 'true'
                     prob_winning_spread = 1 - j['delta']
                     win_amt = premium_per_dollar*prob_winning_spread
-                    
+
                     if win_amt > max_amt:
                         max_amt = win_amt
                         if spread_using_last == 'true':
                             best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['last'], 'premium_paid':j['last'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
                         else:
                             best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['bid'],'premium_paid':j['ask'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
-        
+
         best_call_written['expiry'] = expiry_to_use
         return_dict = {"symbol":symbol,'best_spread':best_spread,'best_call':best_call_written}
         if best_spread or best_call_written:
