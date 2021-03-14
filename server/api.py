@@ -3,8 +3,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from server.routes import router as OptionRouter
 from server.routes import tags_metadata
 
-app = FastAPI(openapi_tags=tags_metadata)
+import logging.config
+from fastapi_route_logger_middleware import RouteLoggerMiddleware
 
+app = FastAPI(openapi_tags=tags_metadata)
+logging.config.fileConfig("./logging.conf")
+app.add_middleware(RouteLoggerMiddleware)
 origins = [
         "http://localhost.tiangolo.com",
         "https://localhost.tiangolo.com",
