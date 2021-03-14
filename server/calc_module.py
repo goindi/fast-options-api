@@ -14,6 +14,7 @@ import redis
 #from cache_module import is_cache_good
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 CACHE_TIMEOUT = 1800
+FASTER_TIMEOUT = 900
 
 nyse = mcal.get_calendar('NYSE')
 a = nyse.valid_days(start_date=str(date.today()), end_date=str(date.today()+timedelta(100)))
@@ -72,8 +73,8 @@ def get_strike_bracket(strikes, price_target):
 
 def get_delta(symbol:str, percent_move:float, expiry:str):
     symbol=symbol.upper()
-    if is_cache_good(f'{symbol}|getdelta|{percent_move}{expiry}'):
-        return ast.literal_eval(r.hget(f'{symbol}|getdelta|{percent_move}{expiry}','value'))
+    if is_cache_good(f'{symbol}|getdelta|{percent_move:.2f}|{expiry}'):
+        return ast.literal_eval(r.hget(f'{symbol}|getdelta|{percent_move:.2f}|{expiry}','value'))
     s = Stock(symbol)
     up_px = s.price*(1+percent_move/100)
     down_px = s.price*(1-percent_move/100)
@@ -93,8 +94,8 @@ def get_delta(symbol:str, percent_move:float, expiry:str):
     delta2 = -put.delta()*(1-down_delta_dict['lower_weight'])
     delta_down_move = delta1 + delta2
     return_dict =  {'delta_up':delta_up_move,'delta_down':delta_down_move}
-    r.hset(f'{symbol}|getdelta|{percent_move}{expiry}','time',datetime.utcnow().strftime('%s'))
-    r.hset(f'{symbol}|getdelta|{percent_move}{expiry}','value',str(return_dict))
+    r.hset(f'{symbol}|getdelta|{percent_move:.2f}|{expiry}','time',datetime.utcnow().strftime('%s'))
+    r.hset(f'{symbol}|getdelta|{percent_move:.2f}|{expiry}','value',str(return_dict))
     return return_dict
 
 def get_nd2(symbol:str, percent_move:float, expiry:str):
@@ -261,10 +262,8 @@ def best_call_trades(symbol, num_of_days):
         max_call_amt = 0
         best_spread = {}
         best_call_written = {}
-
         for i in spread_list:
             #for call
-
             prob_winning_call = 1 - i['delta'] # Not expiring in the money
             i['using_last']='false'
             if i['bid'] == 0 and i['ask'] == 0:
@@ -302,8 +301,6 @@ def best_call_trades(symbol, num_of_days):
             r.hset(f'{symbol}|calltrade|{num_of_days}','value',str(return_dict))
         return return_dict
     except Exception as e:
-        print(e)
-
         return return_dict
 
 def prob_move_pct(symbol:str, n_days:int, percent:float):
@@ -443,7 +440,7 @@ def best_put_trades(symbol, num_of_days):
                         best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
         best_put_written['expiry'] = expiry_to_use
         return_dict = {"symbol":symbol,'best_spread':best_spread,'best_put':best_put_written}
-        if best_spread and best_put_written:
+        if best_spread or best_put_written:
             r.hset(f'{symbol}|puttrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
             r.hset(f'{symbol}|puttrade|{num_of_days}','value',str(return_dict))
             return return_dict
@@ -459,7 +456,6 @@ def amt_to_invest(symbol:str,n_days:int):
     prob_dict = prob_move_pct(symbol, n_days,0)
     if "error" in prob_dict:
         return {"error":"no options"}
-    #print(prob_dict)
     curr_date = str(datetime.date(datetime.now()))
     days_to_exp = abs(datetime.strptime(prob_dict['expiry'],'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
     return_dict = {"symbol":symbol, "kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry'], "prob_up":prob_dict['prob_up'],"prob_down":prob_dict['prob_down'], "kelly2":prob_dict['prob_up']-0.5}
@@ -467,14 +463,11 @@ def amt_to_invest(symbol:str,n_days:int):
     r.hset(f'{symbol}|kelly|{n_days}','value',str(return_dict))
     return return_dict
 
-    # my_tuple = get_atm_ivol(Stock(symbol), days_to_exp)
-    # perc_move = my_tuple[1]*1.15/2
-    # print(f"{perc_move}, {prob_dict['prob_up']},{prob_dict['prob_down']}")
-    # return (prob_dict['prob_up'] - prob_dict['prob_down'])/perc_move
-
 def div_details(symbol:str):
     symbol = symbol.upper()
     y = yf.Ticker(symbol)
+    info = y.info
+    price = (info['bid']+info['ask'])/2
     if y.dividends.empty:
         div = "0"
         div_date = ""
@@ -483,7 +476,7 @@ def div_details(symbol:str):
         div = y.dividends[-1]
         div_date = str(y.dividends.index[-1])[0:10]
         div_yld = y.info['dividendYield']
-    return {"symbol":symbol,'div':div, 'div_date':div_date, 'div_yld':div_yld}
+    return {"symbol":symbol,'div':div, 'div_date':div_date, 'div_yld':div_yld, 'stock_price':price}
 
 def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
     symbol = symbol.upper()
@@ -505,7 +498,6 @@ def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
         return_dict["ivol"] = std_dev # realized vol.
         return_dict["low_range"] = curr_px - n_days_sigma*sigma
         return_dict["high_range"] = curr_px + n_days_sigma*sigma
-
         return_dict["today_volume"] =info['volume24Hr']
         return_dict["avg_10d_volume"] = info["averageVolume10days"]
         return return_dict
@@ -514,7 +506,6 @@ def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
 
 def get_gamma_squeeze(symbol:str, n_days:int):
     symbol = symbol.upper()
-
     if is_cache_good(f'{symbol}|gamma|{n_days}'):
         return ast.literal_eval(r.hget(f'{symbol}|gamma|{n_days}','value'))
 
@@ -524,6 +515,7 @@ def get_gamma_squeeze(symbol:str, n_days:int):
     try:
         y = yf.Ticker(symbol)
         info = y.info
+        price = (info['bid']+info['ask'])/2
         return_dict = {"symbol":symbol}
         return_dict['stock_float'] = info['sharesOutstanding']
         expiry_dict = get_expiries_bracket(symbol, n_days)
@@ -541,6 +533,7 @@ def get_gamma_squeeze(symbol:str, n_days:int):
         return_dict["strike_1"] = float(df.strike[0])
         return_dict["gamma_2"] = float(df.openInterest[1]*100)
         return_dict["strike_2"] = float(df.strike[1])
+        return_dict['stock_price'] = price
         r.hset(f'{symbol}|gamma|{n_days}','time',datetime.utcnow().strftime('%s'))
         r.hset(f'{symbol}|gamma|{n_days}','value',str(return_dict))
         return return_dict
@@ -551,12 +544,14 @@ def get_gamma_squeeze(symbol:str, n_days:int):
 
 def stock_volume (symbol:str, n_days:int):
     symbol = symbol.upper()
+    if is_cache_good(f'{symbol}|volume|{n_days}'):
+        return ast.literal_eval(r.hget(f'{symbol}|volume|{n_days}','value'))
     curr_date = str(datetime.now().date())
-    is_trading = r.hget(curr_date,"trading")
-    s = yf.Ticker(symbol)
-    weight = 1
+    details_dict = get_current_stock_details(symbol)
     d1 = datetime.now()
-    info = s.info
+    is_trading = r.hget(curr_date,"trading")
+    weight = 1
+    price = details_dict["close"]
     if is_trading == "yes":
         d2 = d1.replace(hour=9)
         d2 = d2.replace(minute=30)
@@ -566,10 +561,16 @@ def stock_volume (symbol:str, n_days:int):
                 weight = 1
             else:
                 weight = (390*60)/delta.total_seconds()
-    today_volume = info['volume']*weight
+                price = details_dict["mid"]
+    today_volume = details_dict['curr_volume']*weight
+    s = yf.Ticker(symbol)
     p = stats.percentileofscore(s.history()[-n_days:].Volume,today_volume)
-    return {'symbol':symbol, 'percentile':p, 'volume':today_volume, 'avg_10d_volume':info['averageVolume10days']}
-def is_cache_good(cache_key):
+    return_dict =  {'symbol':symbol, 'percentile':p, 'volume':today_volume, 'avg_10d_volume':details_dict['avg_10d_volume'],'stock_price':price}
+    r.hset(f'{symbol}|volume|{n_days}','time',datetime.utcnow().strftime('%s'))
+    r.hset(f'{symbol}|volume|{n_days}','value',str(return_dict))
+    return return_dict
+
+def is_cache_good(cache_key, cache_timeout = CACHE_TIMEOUT ):
     d1 = datetime.now()
     curr_date = str(date.today())
     open_time = d1.replace(hour=9)
@@ -581,7 +582,7 @@ def is_cache_good(cache_key):
     if r.hget(cache_key,'time'):
         if r.hget(curr_date,"trading_date") == "yes" :
             if d1 >= open_time and d1 <= close_time:
-                if (now_in_sec - int(r.hget(cache_key,'time'))) < CACHE_TIMEOUT:
+                if (now_in_sec - int(r.hget(cache_key,'time'))) < cache_timeout:
                     return True
             elif d1 > close_time and int(r.hget(cache_key,'time')) > int(close_time.strftime('%s')):
                 return True
@@ -602,3 +603,22 @@ def check_is_trading():
         r.hset(curr_date,"trading_date","yes")
     else:
         r.hset(curr_date,"trading_date","no")
+
+def get_current_stock_details(symbol:str):
+    symbol = symbol.upper()
+    return_dict = {}
+    if is_cache_good(symbol,FASTER_TIMEOUT):
+        return ast.literal_eval(r.hget(symbol,'value'))
+    y = yf.Ticker(symbol)
+    info = y.info
+    return_dict["close"] = y.history().Close[-1]
+    return_dict["mid"] = (info['bid']+info['ask'])/2
+    return_dict["avg_10d_volume"] = info['averageVolume10days']
+    return_dict["curr_volume"] = info['volume']
+    return_dict["last_div"] = info['lastDividendValue']
+    return_dict["last_ex_div"] = info['exDividendDate']
+    return_dict["div_rate"] = info['dividendRate']
+    return_dict["div_yld"] = info['dividendYield']
+    r.hset(symbol,'time',datetime.utcnow().strftime('%s'))
+    r.hset(symbol,'value',str(return_dict))
+    return return_dict

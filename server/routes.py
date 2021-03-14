@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Body
 from fastapi.encoders import jsonable_encoder
 from datetime import datetime
-from server.calc_module import range_data_from_symbol, best_call_trades, best_put_trades, get_gamma_squeeze
+from server.calc_module import range_data_from_symbol, best_call_trades, best_put_trades, get_gamma_squeeze, get_current_stock_details
 from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume
 from server.calc_module import  crypto_range_data_from_symbol
 from server.twitter_sentiment import find_twitter_sentiment
@@ -173,6 +173,10 @@ async def get_stock_volume(symbol: str, days:int = 10) -> dict:
 @router.get("/stocks/dividend/{symbol}")
 async def get_div_details(symbol: str) -> dict:
     return div_details(symbol)
+
+@router.get("/stocks/details/{symbol}")
+async def get_stock_details(symbol: str) -> dict:
+    return get_current_stock_details(symbol)
 
 @router.get("/sentiment/twitter/{symbol}")
 async def get_twitter_sentiments_details(symbol: str, num_of_tweets:int=10) -> dict:
