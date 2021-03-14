@@ -412,18 +412,23 @@ def best_put_trades(symbol, num_of_days):
         spread_list = []
         strikes = p.strikes
         for i in strikes:
-            if i <= range_dict["high_range"] and counter < 15:
+            if i <= range_dict["high_range"] and counter < 10:
                 counter = counter+1
                 p.set_strike(i)
-                spread_list.append({'strike':i,'bid':p.bid,'ask':p.ask,'delta':-p.delta()})
+                spread_list.append({'strike':i,'bid':p.bid,'ask':p.ask,'using_last':'false','delta':-p.delta()})
         max_amt = 0
         max_put_amt = 0
         best_spread = {}
         best_put_written = {}
         spread_list.reverse()
         for i in spread_list:
-            #for call
+            #for put
             prob_winning_put = 1 - i['delta']
+            i['using_last']='false'
+            if i['bid'] == 0 and i['ask'] == 0:
+                i['bid'] = i['last']
+                i['ask'] = i['last']
+                i['using_last']='true'
             premium_put = i['bid']
             put_win_amt = premium_put*prob_winning_put
             if put_win_amt > max_put_amt:
@@ -433,11 +438,18 @@ def best_put_trades(symbol, num_of_days):
                 if i['strike'] > j['strike']:
                     #for spread
                     premium_per_dollar = (i['bid']-j['ask'])/abs(j['strike']-i['strike'])
+                    spread_using_last = 'false'
+                    if i['using_last'] == 'true' or  j['using_last'] == 'true': #If any leg uses last mark spread as last
+                        spread_using_last = 'true'
                     prob_winning_spread = 1 - j['delta']
                     win_amt = premium_per_dollar*prob_winning_spread
                     if win_amt > max_amt:
                         max_amt = win_amt
-                        best_spread = {'strike_long':i['strike'],'strike_short':j['strike'], 'premium_received':i['bid'], 'premium_paid':j['ask'], 'expiry':expiry_to_use}
+                        if spread_using_last == 'true':
+                            best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['last'], 'premium_paid':j['last'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
+                        else:
+                            best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['bid'],'premium_paid':j['ask'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
+                        
         best_put_written['expiry'] = expiry_to_use
         return_dict = {"symbol":symbol,'best_spread':best_spread,'best_put':best_put_written}
         if best_spread or best_put_written:
