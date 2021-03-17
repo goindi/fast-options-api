@@ -184,7 +184,7 @@ def get_atm_ivol(s, ndays=30):
 def range_data_from_symbol(symbol, ndays=7, sigma=1.15):
     symbol = symbol.upper()
     return_dict = {"symbol": "Error",
-                    "desc": "No Data found for %s"%symbol
+                    "error": "No Data found for %s"%symbol
                 }
     try:
         if is_cache_good(f'{symbol}|range|{ndays}|{sigma}'):
@@ -193,7 +193,7 @@ def range_data_from_symbol(symbol, ndays=7, sigma=1.15):
         s = Stock(symbol)
         prob = prob_move_pct(symbol, ndays,0)
         if "error" in prob:
-            return {"error":"no options"}
+            return {"error":"No options were found"}
         my_tuple = get_atm_ivol(s, ndays)
         volume = stock_volume(symbol, ndays)
 
@@ -234,12 +234,14 @@ def kelly_fraction(win_prob : float, win_loss_ratio:float)->float:
 
 def best_call_trades(symbol, num_of_days):
     symbol=symbol.upper()
-    if is_cache_good(f'{symbol}|calltrade|{num_of_days}'):
-        return ast.literal_eval(r.hget(f'{symbol}|calltrade|{num_of_days}','value'))
-    return_dict={"error":"no options"}
+    #if is_cache_good(f'{symbol}|calltrade|{num_of_days}'):
+        #return ast.literal_eval(r.hget(f'{symbol}|calltrade|{num_of_days}','value'))
+    return_dict={"error":"No options were found"}
     try:
         c = Call(symbol)
+        print("fere")
         range_dict = range_data_from_symbol(symbol, num_of_days)
+        print(range_dict)
         curr_date = str(datetime.date(datetime.now()))
         expiries = c.expirations
         expiry_to_use = expiries[0]
@@ -262,11 +264,12 @@ def best_call_trades(symbol, num_of_days):
         max_call_amt = 0
         best_spread = {}
         best_call_written = {}
+        print(spread_list)
         for i in spread_list:
             #for call
             prob_winning_call = 1 - i['delta'] # Not expiring in the money
             i['using_last']='false'
-            if i['bid'] == 0 and i['ask'] == 0:
+            if i['bid'] == 0 or i['ask'] == 0:
                 i['bid'] = i['last']
                 i['ask'] = i['last']
                 i['using_last']='true'
@@ -307,7 +310,7 @@ def prob_move_pct(symbol:str, n_days:int, percent:float):
     symbol=symbol.upper()
     if is_cache_good(f'{symbol}|pmovepct|{n_days}|{percent}'):
         return ast.literal_eval(r.hget(f'{symbol}|pmovepct|{n_days}|{percent}','value'))
-    return_dict={"error":"no options"}
+    return_dict={"error":"No options were found"}
     try:
         c = Call(symbol)
         curr_date = str(datetime.date(datetime.now()))
@@ -331,7 +334,7 @@ def prob_move_sigma(symbol:str, n_days:int, sigma_fraction_to_use:float):
     symbol=symbol.upper()
     if is_cache_good(f'{symbol}|pmovesigma|{n_days}|{sigma_fraction_to_use}'):
         return ast.literal_eval(r.hget(f'{symbol}|pmovesigma|{n_days}|{sigma_fraction_to_use}','value'))
-    return_dict={"error":"no options"}
+    return_dict={"error":"No options were found"}
     try:
         c = Call(symbol)
         expiries = c.expirations
@@ -395,7 +398,7 @@ def best_put_trades(symbol, num_of_days):
     symbol=symbol.upper()
     if is_cache_good(f'{symbol}|puttrade|{num_of_days}'):
         return ast.literal_eval(r.hget(f'{symbol}|puttrade|{num_of_days}','value'))
-    return_dict={"error":"no options"}
+    return_dict={"error":"No options were found"}
     try:
         p = Put(symbol)
         range_dict = range_data_from_symbol(symbol, num_of_days)
@@ -425,7 +428,7 @@ def best_put_trades(symbol, num_of_days):
             #for put
             prob_winning_put = 1 - i['delta']
             i['using_last']='false'
-            if i['bid'] == 0 and i['ask'] == 0:
+            if i['bid'] == 0 or i['ask'] == 0:
                 i['bid'] = i['last']
                 i['ask'] = i['last']
                 i['using_last']='true'
@@ -449,7 +452,7 @@ def best_put_trades(symbol, num_of_days):
                             best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['last'], 'premium_paid':j['last'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
                         else:
                             best_spread = {'strike_to_sell':i['strike'],'strike_to_buy':j['strike'], 'premium_received':i['bid'],'premium_paid':j['ask'], 'expiry':expiry_to_use,'spread_using_last':spread_using_last}
-                        
+
         best_put_written['expiry'] = expiry_to_use
         return_dict = {"symbol":symbol,'best_spread':best_spread,'best_put':best_put_written}
         if best_spread or best_put_written:
@@ -467,7 +470,7 @@ def amt_to_invest(symbol:str,n_days:int):
 
     prob_dict = prob_move_pct(symbol, n_days,0)
     if "error" in prob_dict:
-        return {"error":"no options"}
+        return {"error":"No options were found"}
     curr_date = str(datetime.date(datetime.now()))
     days_to_exp = abs(datetime.strptime(prob_dict['expiry'],'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
     return_dict = {"symbol":symbol, "kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry'], "prob_up":prob_dict['prob_up'],"prob_down":prob_dict['prob_down'], "kelly2":prob_dict['prob_up']-0.5}
@@ -495,7 +498,7 @@ def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
     if symbol in ['BTC','ETH']:
         symbol = f'{symbol}-USD'
     return_dict = {"symbol": "Error",
-                    "desc": "No Data found for %s"%symbol
+                    "error": "No Data found for %s"%symbol
                 }
     try:
         y = yf.Ticker(symbol)
@@ -521,8 +524,8 @@ def get_gamma_squeeze(symbol:str, n_days:int):
     if is_cache_good(f'{symbol}|gamma|{n_days}'):
         return ast.literal_eval(r.hget(f'{symbol}|gamma|{n_days}','value'))
 
-    return_dict = {"symbol": "Error",
-                    "desc": "No Data found for %s"%symbol
+    return_dict = {"error":  "No Data found for %s"%symbol,
+                    "symbol": "Error",
                 }
     try:
         y = yf.Ticker(symbol)
