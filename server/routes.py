@@ -4,7 +4,7 @@ from fastapi.encoders import jsonable_encoder
 
 from datetime import datetime
 from server.calc_module import range_data_from_symbol, best_call_trades, best_put_trades, get_gamma_squeeze, get_current_stock_details
-from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume
+from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume, best_put_protection
 from server.calc_module import  crypto_range_data_from_symbol
 from server.twitter_sentiment import find_twitter_sentiment
 
@@ -139,6 +139,9 @@ async def get_my_call_trades(symbol: str, days:int = 7) -> dict:
 @router.get("/options/put_trades/{symbol}")
 async def get_my_put_trades(symbol: str, days:int = 7) -> dict:
     return best_put_trades(symbol, days)
+@router.get("/options/put_protection/{symbol}")
+async def get_my_put_protection(symbol: str, days:int = 7) -> dict:
+    return best_put_protection(symbol, days)
 
 @router.get("/options/prob_pct/{symbol}")
 async def get_probability_of_n_pct_move(symbol: str, days:int = 7, percent:float = 5) -> dict:
