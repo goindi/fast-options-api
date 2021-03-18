@@ -405,8 +405,8 @@ def best_put_trades(symbol, num_of_days):
         counter = 0
         spread_list = []
         strikes = p.strikes
-        for i in strikes:
-            if i <= range_dict["high_range"] and counter < 10:
+        for i in reversed(strikes):
+            if i <= range_dict["low_range"] and counter < 10:
                 counter = counter+1
                 p.set_strike(i)
                 spread_list.append({'strike':i,'bid':p.bid,'ask':p.ask,'using_last':'false','delta':-p.delta()})
@@ -415,6 +415,7 @@ def best_put_trades(symbol, num_of_days):
         best_spread = {}
         best_put_written = {}
         spread_list.reverse()
+        print(spread_list)
         for i in spread_list:
             #for put
             prob_winning_put = 1 - i['delta']
