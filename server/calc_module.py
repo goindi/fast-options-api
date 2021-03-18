@@ -409,7 +409,7 @@ def best_put_trades(symbol, num_of_days):
             if i <= range_dict["low_range"] and counter < 10:
                 counter = counter+1
                 p.set_strike(i)
-                spread_list.append({'strike':i,'bid':p.bid,'ask':p.ask,'using_last':'false','delta':-p.delta()})
+                spread_list.append({'strike':i,'bid':p.bid,'ask':p.ask,'last':p.price,'using_last':'false','delta':-p.delta()})
         max_amt = 0
         max_put_amt = 0
         best_spread = {}
@@ -477,7 +477,7 @@ def best_put_protection(symbol, num_of_days):
             if i <= s.price and counter < 10:
                 counter = counter+1
                 p.set_strike(i)
-                spread_list.append({'strike':i,'bid':p.bid,'ask':p.ask,'using_last':'false','delta':-p.delta()})
+                spread_list.append({'strike':i,'bid':p.bid,'ask':p.ask,'last':p.price,'using_last':'false','delta':-p.delta()})
         min_put_strength = 100000
         best_put = {}
         print(spread_list)
