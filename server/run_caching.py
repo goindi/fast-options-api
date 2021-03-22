@@ -16,15 +16,14 @@ BRAD_LIST = ["ABBV","GILD","GME","IBM", "MO", "T", "XOM"]
 def run_caching():
     for i in SYMBOL_LIST:
         range_data_from_symbol(i, 7, 1.15)
-        time.sleep(2)
-        prob_move_pct(i,30,5)
-        time.sleep(2)
-        amt_to_invest(i,7)
-        time.sleep(2)
+        time.sleep(5)
     for i in BRAD_LIST:
         range_data_from_symbol(i, 14, 1.15)
-        time.sleep(2)
+        time.sleep(5)
+        best_call_trades(i, 7)
+        time.sleep(5)
         best_call_trades(i, 14)
+
 
 while True:
     check_is_trading()
