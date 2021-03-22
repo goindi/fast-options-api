@@ -235,15 +235,16 @@ def best_call_trades(symbol, num_of_days):
     try:
         c = Call(symbol)
         range_dict = range_data_from_symbol(symbol, num_of_days)
-        print(range_dict)
         curr_date = str(datetime.date(datetime.now()))
         expiries = c.expirations
         expiry_to_use = expiries[0]
+        min_day_diff=1000
         for i in expiries:
             days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
-            expiry_to_use = i
-            if days_to_exp >= num_of_days:
-                break
+            my_day_diff = abs(days_to_exp - num_of_days)
+            if my_day_diff<min_day_diff:
+                expiry_to_use = i
+                min_day_diff = my_day_diff
         c = Call(symbol,d=int(expiry_to_use[0:2]),m=int(expiry_to_use[3:5]),y=int(expiry_to_use[6:10]))
         counter = 0
         spread_list = []
@@ -258,7 +259,6 @@ def best_call_trades(symbol, num_of_days):
         max_call_amt = 0
         best_spread = {}
         best_call_written = {}
-        print(spread_list)
         for i in spread_list:
             #for call
             prob_winning_call = 1 - i['delta'] # Not expiring in the money
@@ -415,7 +415,6 @@ def best_put_trades(symbol, num_of_days):
         best_spread = {}
         best_put_written = {}
         spread_list.reverse()
-        print(spread_list)
         for i in spread_list:
             #for put
             prob_winning_put = 1 - i['delta']
@@ -480,7 +479,6 @@ def best_put_protection(symbol, num_of_days):
                 spread_list.append({'strike':i,'bid':p.bid,'ask':p.ask,'last':p.price,'using_last':'false','delta':-p.delta()})
         min_put_strength = 100000
         best_put = {}
-        print(spread_list)
         spread_list.reverse()
         for i in spread_list:
             #for put
@@ -493,7 +491,7 @@ def best_put_protection(symbol, num_of_days):
             premium_put = i['ask']
 
             put_cost_per_money = premium_put/prob_in_the_money_put
-            print(f'metric-{put_cost_per_money}::premiun{premium_put}::prob-{prob_in_the_money_put}')
+
 
             if put_cost_per_money < min_put_strength:
                 min_put_strength = put_cost_per_money
@@ -632,7 +630,7 @@ def is_cache_good(cache_key, cache_timeout = CACHE_TIMEOUT ):
     close_time = d1.replace(hour=16)
     close_time = close_time.replace(minute=00)
     now_in_sec = int(datetime.utcnow().strftime('%s'))
-    print(f'************{cache_key}*****')
+
     if r.hget(cache_key,'time'):
         if r.hget(curr_date,"trading_date") == "yes" :
             if d1 >= open_time and d1 <= close_time:
@@ -642,8 +640,7 @@ def is_cache_good(cache_key, cache_timeout = CACHE_TIMEOUT ):
                 return True
             elif d1 < open_time and (now_in_sec - int(r.hget(cache_key,'time'))) < 3600*4: #4 hours
                 return True
-            print(r.hget(cache_key,'time'))
-            print(close_time.strftime('%s'))
+
         elif r.hget(curr_date,"trading_date") == "no":
             if (now_in_sec - int(r.hget(cache_key,'time'))) < 3600*10: #update every 10 hours on holidays
                 return True
