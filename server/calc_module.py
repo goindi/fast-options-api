@@ -396,11 +396,13 @@ def best_put_trades(symbol, num_of_days):
         curr_date = str(datetime.date(datetime.now()))
         expiries = p.expirations
         expiry_to_use = expiries[0]
+        min_day_diff=1000
         for i in expiries:
             days_to_exp = abs(datetime.strptime(i,'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
-            expiry_to_use = i
-            if days_to_exp >= num_of_days:
-                break
+            my_day_diff = abs(days_to_exp - num_of_days)
+            if my_day_diff<min_day_diff:
+                expiry_to_use = i
+                min_day_diff = my_day_diff
         p = Put(symbol,d=int(expiry_to_use[0:2]),m=int(expiry_to_use[3:5]),y=int(expiry_to_use[6:10]))
         counter = 0
         spread_list = []
