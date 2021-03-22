@@ -23,8 +23,7 @@ def run_caching():
         best_call_trades(i, 7)
         time.sleep(5)
         best_call_trades(i, 14)
-
-
+        
 while True:
     check_is_trading()
     d1 = datetime.now()

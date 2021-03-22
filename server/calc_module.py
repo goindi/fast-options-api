@@ -632,7 +632,7 @@ def is_cache_good(cache_key, cache_timeout = CACHE_TIMEOUT ):
     close_time = d1.replace(hour=16)
     close_time = close_time.replace(minute=00)
     now_in_sec = int(datetime.utcnow().strftime('%s'))
-
+    print(f'************{cache_key}*****')
     if r.hget(cache_key,'time'):
         if r.hget(curr_date,"trading_date") == "yes" :
             if d1 >= open_time and d1 <= close_time:
