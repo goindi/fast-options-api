@@ -13,6 +13,7 @@ SYMBOL_LIST = ["AAL","AAPL","ABBV","ACB","AI","AMC","AMD","AMZN","APHA","ARKK","
 
 BRAD_LIST = ["ABBV","GILD","GME","IBM", "MO", "T", "XOM"]
 PANI_LIST = ['AAPL','BIGC','BZUN','GRWG','APHA','AMC','LAC','SNOW','PGNY']
+WTF_LIST = ['MELI','TSLA','UWMC','RKT','SNDL','LBRDK','IAC','PLTR','BB','CVNA','GME','SKT','AMC','SPY']
 
 def run_caching():
     # for i in SYMBOL_LIST:
@@ -28,6 +29,10 @@ def run_caching():
         best_call_trades(i, 14)
     for i in PANI_LIST:
         range_data_from_symbol(i, 7, 1.15)
+        time.sleep(4)
+        prob_move_pct(i, 7,10)
+    for i in WTF_LIST:
+        amt_to_invest(i, 7)
         time.sleep(4)
         prob_move_pct(i, 7,10)
 
