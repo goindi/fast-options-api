@@ -12,18 +12,26 @@ CACHE_TIMEOUT = 1800
 SYMBOL_LIST = ["AAL","AAPL","ABBV","ACB","AI","AMC","AMD","AMZN","APHA","ARKK","BB","BLNK","BNGO","C","CCIV","CCL","CLOV","COST","CRSR","DKNG","EEM","F","FB","FSLY","FSR","FUBO","FXI","G","GDX","GE","GILD","GLD","GM","GME","GO","GOLD","GSAT","GTT","HUGE","HYG","HYLN","IBM","IMO","IPO","IWM","K","KMPH","L","LAZR","LI","LMND","MARA","MO","MSFT","MU","MVIS","NIO","NOK","NVDA","OCGN","PINS","PLTR","PLUG","PSTH","PTON","QQQ","R","RIOT","RKT","RSI","SE","SENS","SI","SKT","SLV","SNAP","SNDL","SOS","SOXL","SPCE","SPY","SQ","SQQQ","T","TD","TGT","TLRY","TLT","TSLA","TWTR","XOM","ZM"]
 
 BRAD_LIST = ["ABBV","GILD","GME","IBM", "MO", "T", "XOM"]
+PANI_LIST = ['AAPL','BIGC','BZUN','GRWG','APHA','AMC','LAC','SNOW','PGNY']
 
 def run_caching():
-    for i in SYMBOL_LIST:
-        range_data_from_symbol(i, 7, 1.15)
-        time.sleep(5)
+    # for i in SYMBOL_LIST:
+    #     range_data_from_symbol(i, 7, 1.15)
+    #     time.sleep(5)
     for i in BRAD_LIST:
+        range_data_from_symbol(i, 7, 1.15)
+        time.sleep(3)
         range_data_from_symbol(i, 14, 1.15)
-        time.sleep(5)
+        time.sleep(4)
         best_call_trades(i, 7)
         time.sleep(5)
         best_call_trades(i, 14)
-        
+    for i in PANI_LIST:
+        range_data_from_symbol(i, 7, 1.15)
+        time.sleep(4)
+        prob_move_pct(i, 7,10)
+
+
 while True:
     check_is_trading()
     d1 = datetime.now()
