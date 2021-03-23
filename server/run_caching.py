@@ -21,19 +21,19 @@ def run_caching():
     #     time.sleep(5)
     for i in BRAD_LIST:
         range_data_from_symbol(i, 7, 1.15)
-        time.sleep(3)
+        time.sleep(7)
         range_data_from_symbol(i, 14, 1.15)
-        time.sleep(4)
+        time.sleep(6)
         best_call_trades(i, 7)
         time.sleep(5)
         best_call_trades(i, 14)
     for i in PANI_LIST:
         range_data_from_symbol(i, 7, 1.15)
-        time.sleep(4)
+        time.sleep(7)
         prob_move_pct(i, 7,10)
     for i in WTF_LIST:
         amt_to_invest(i, 7)
-        time.sleep(4)
+        time.sleep(9)
         prob_move_pct(i, 7,10)
 
 
