@@ -540,6 +540,7 @@ def div_details(symbol:str):
 
 def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
     symbol = symbol.upper()
+    return_dict = {}
     if symbol in ['BTC','ETH']:
         symbol = f'{symbol}-USD'
 
