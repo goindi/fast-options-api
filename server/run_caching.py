@@ -22,6 +22,14 @@ def run_caching():
     # for i in SYMBOL_LIST:
     #     range_data_from_symbol(i, 7, 1.15)
     #     time.sleep(5)
+    for i in ORACLE:
+        range_data_from_symbol(i, 7, 1.15)
+        time.sleep(randint(3,10))
+        amt_to_invest(i, 7)
+    for i in WTF_LIST:
+        amt_to_invest(i, 7)
+        time.sleep(randint(3,10))
+        prob_move_pct(i, 7,10)
     for i in BRAD_LIST:
         range_data_from_symbol(i, 7, 1.15)
         time.sleep(randint(3,10))
@@ -34,14 +42,8 @@ def run_caching():
         range_data_from_symbol(i, 7, 1.15)
         time.sleep(randint(3,10))
         prob_move_pct(i, 7,10)
-    for i in WTF_LIST:
-        amt_to_invest(i, 7)
-        time.sleep(randint(3,10))
-        prob_move_pct(i, 7,10)
-    for i in ORACLE:
-        range_data_from_symbol(i, 7, 1.15)
-        time.sleep(randint(3,10))
-        amt_to_invest(i, 7)
+
+
 
 
 
