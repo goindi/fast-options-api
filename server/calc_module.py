@@ -542,11 +542,10 @@ def div_details(symbol:str):
 def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
     symbol = symbol.upper()
     return_dict = {}
-    if is_cache_good(f'{symbol}|cryptorange|{n_days}|{sigma}'):
-        return ast.literal_eval(r.hget(f'{symbol}|cryptorange|{n_days}|{sigma}','value'))
     if symbol in ['BTC','ETH']:
         symbol = f'{symbol}-USD'
-
+    if is_cache_good(f'{symbol}|cryptorange|{n_days}|{sigma}'):
+        return ast.literal_eval(r.hget(f'{symbol}|cryptorange|{n_days}|{sigma}','value'))
     try:
         y = yf.Ticker(symbol)
         info = y.info
