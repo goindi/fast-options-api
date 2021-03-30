@@ -11,9 +11,10 @@ import numpy as np
 from scipy.stats import norm
 import ast
 import redis
+from random import randint
 #from cache_module import is_cache_good
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
-CACHE_TIMEOUT = 1800
+CACHE_TIMEOUT = 1200
 FASTER_TIMEOUT = 900
 
 nyse = mcal.get_calendar('NYSE')
@@ -626,6 +627,7 @@ def stock_volume (symbol:str, n_days:int):
     return return_dict
 
 def is_cache_good(cache_key, cache_timeout = CACHE_TIMEOUT ):
+    cache_timeout = CACHE_TIMEOUT + randint(1,700)
     d1 = datetime.now()
     curr_date = str(date.today())
     open_time = d1.replace(hour=9)
