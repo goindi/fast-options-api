@@ -542,6 +542,8 @@ def div_details(symbol:str):
 def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
     symbol = symbol.upper()
     return_dict = {}
+    if is_cache_good(f'{symbol}|cryptorange|{n_days}|{sigma}'):
+        return ast.literal_eval(r.hget(f'{symbol}|cryptorange|{n_days}|{sigma}','value'))
     if symbol in ['BTC','ETH']:
         symbol = f'{symbol}-USD'
 
@@ -560,6 +562,8 @@ def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
         return_dict["high_range"] = curr_px + n_days_sigma*sigma
         return_dict["today_volume"] =info['volume24Hr']
         return_dict["avg_10d_volume"] = info["averageVolume10days"]
+        r.hset(f'{symbol}|cryptorange|{n_days}|{sigma}','time',datetime.utcnow().strftime('%s'))
+        r.hset(f'{symbol}|cryptorange|{n_days}|{sigma}','value',str(return_dict))
         return return_dict
     except:
         return {"symbol": "Error", "error": "No Data found for %s"%symbol}
