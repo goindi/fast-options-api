@@ -4,6 +4,7 @@ import pandas as pd
 import ast
 import redis
 import time
+from random import randint
 from datetime import datetime, timedelta
 #from cache_module import check_is_trading
 from calc_module import range_data_from_symbol, prob_move_pct,  amt_to_invest, check_is_trading, best_call_trades
@@ -23,23 +24,23 @@ def run_caching():
     #     time.sleep(5)
     for i in BRAD_LIST:
         range_data_from_symbol(i, 7, 1.15)
-        time.sleep(7)
+        time.sleep(randint(3,10))
         range_data_from_symbol(i, 14, 1.15)
-        time.sleep(6)
+        time.sleep(randint(3,10))
         best_call_trades(i, 7)
-        time.sleep(5)
+        time.sleep(randint(3,10))
         best_call_trades(i, 14)
     for i in PANI_LIST:
         range_data_from_symbol(i, 7, 1.15)
-        time.sleep(7)
+        time.sleep(randint(3,10))
         prob_move_pct(i, 7,10)
     for i in WTF_LIST:
         amt_to_invest(i, 7)
-        time.sleep(9)
+        time.sleep(randint(3,10))
         prob_move_pct(i, 7,10)
     for i in ORACLE:
         range_data_from_symbol(i, 7, 1.15)
-        time.sleep(6)
+        time.sleep(randint(3,10))
         amt_to_invest(i, 7)
 
 
