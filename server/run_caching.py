@@ -13,7 +13,9 @@ SYMBOL_LIST = ["AAL","AAPL","ABBV","ACB","AI","AMC","AMD","AMZN","APHA","ARKK","
 
 BRAD_LIST = ["ABBV","GILD","GME","IBM", "MO", "T", "XOM"]
 PANI_LIST = ['AAPL','BIGC','BZUN','GRWG','APHA','AMC','LAC','SNOW','PGNY']
-WTF_LIST = ['MELI','TSLA','UWMC','RKT','SNDL','LBRDK','IAC','PLTR','BB','CVNA','GME','SKT','AMC','SPY']
+WTF_LIST = ['MELI','TSLA','UWMC','RKT','SNDL','LBRDK','IAC','PLTR','BB','CVNA','GME','SKT','AMC','SPY','UPST']
+ORACLE = ['GME','AMC','PLTR','TSLA','SE','MELI','TWTR','IAC']
+
 
 def run_caching():
     # for i in SYMBOL_LIST:
@@ -35,6 +37,11 @@ def run_caching():
         amt_to_invest(i, 7)
         time.sleep(9)
         prob_move_pct(i, 7,10)
+    for i in ORACLE:
+        range_data_from_symbol(i, 7, 1.15)
+        time.sleep(6)
+        amt_to_invest(i, 7)
+
 
 
 while True:
