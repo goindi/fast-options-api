@@ -17,6 +17,7 @@ PANI_LIST = ['AAPL','BIGC','BZUN','GRWG','APHA','AMC','LAC','SNOW','PGNY']
 WTF_LIST = ['MELI','TSLA','UWMC','RKT','SNDL','LBRDK','IAC','PLTR','BB','CVNA','GME','SKT','AMC','SPY','UPST','VIAC','SE']
 ORACLE = ['GME','AMC','PLTR','TSLA','SE','MELI','TWTR','IAC']
 CRYPTO = ['BTC','ETH']
+DEBA_LIST = ["BA","SAM","GNRC","DKS","GM","MSFT","PII","RBC","WFC","ADBE","DXC","MT","NVDA","PYPL","NOW","TSM","WSM","SE","PDD"];
 
 
 def run_caching():
@@ -29,6 +30,10 @@ def run_caching():
         range_data_from_symbol(i, 7, 1.15)
         time.sleep(randint(3,10))
         amt_to_invest(i, 7)
+    for i in DEBA_LIST:
+        amt_to_invest(i, 7)
+        time.sleep(randint(3,10))
+        prob_move_pct(i, 7,10)
     for i in WTF_LIST:
         amt_to_invest(i, 7)
         time.sleep(randint(3,10))
