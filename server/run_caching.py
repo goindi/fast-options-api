@@ -18,6 +18,7 @@ WTF_LIST = ['MELI','TSLA','UWMC','RKT','SNDL','LBRDK','IAC','PLTR','BB','CVNA','
 ORACLE = ['GME','AMC','PLTR','TSLA','SE','MELI','TWTR','IAC']
 CRYPTO = ['BTC','ETH']
 DEBA_LIST = ["BA","SAM","GNRC","DKS","GM","MSFT","PII","RBC","WFC","ADBE","DXC","MT","NVDA","PYPL","NOW","TSM","WSM","SE","PDD"];
+SUNIL_LIST = ["AVGO","FB","NFLX","ROKU","SHAK","SNOW","TSLA"];
 
 
 def run_caching():
@@ -31,6 +32,10 @@ def run_caching():
         time.sleep(randint(3,10))
         amt_to_invest(i, 7)
     for i in DEBA_LIST:
+        amt_to_invest(i, 7)
+        time.sleep(randint(3,10))
+        prob_move_pct(i, 7,10)
+    for i in SUNIL_LIST:
         amt_to_invest(i, 7)
         time.sleep(randint(3,10))
         prob_move_pct(i, 7,10)
