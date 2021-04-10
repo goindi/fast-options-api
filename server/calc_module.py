@@ -629,6 +629,24 @@ def stock_volume (symbol:str, n_days:int):
     r.hset(f'{symbol}|volume|{n_days}','value',str(return_dict))
     return return_dict
 
+def stock_returns(symbol:str, n_days:int):
+    symbol = symbol.upper()
+    if is_cache_good(f'{symbol}|price|{n_days}'):
+        return ast.literal_eval(r.hget(f'{symbol}|price|{n_days}','value'))
+    x = yf.Ticker(symbol)
+    df = x.history(period='1y', interval='1d')
+    df = df.dropna()
+    df['ndays']=df['Close'].shift(n_days)
+    df = df.dropna()
+    df['returns']= (df.Close-df.ndays)/df.ndays
+    today_return = df.returns[-1]
+    p = stats.percentileofscore(df.returns,today_return)
+    return_dict =  {'symbol':symbol, 'percentile':p}
+    r.hset(f'{symbol}|price|{n_days}','time',datetime.utcnow().strftime('%s'))
+    r.hset(f'{symbol}|price|{n_days}','value',str(return_dict))
+    return return_dict
+
+
 def is_cache_good(cache_key, cache_timeout = CACHE_TIMEOUT ):
     cache_timeout = CACHE_TIMEOUT + randint(1,700)
     d1 = datetime.now()

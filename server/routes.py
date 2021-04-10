@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from datetime import datetime
 from server.calc_module import range_data_from_symbol, best_call_trades, best_put_trades, get_gamma_squeeze, get_current_stock_details
 from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume, best_put_protection
-from server.calc_module import  crypto_range_data_from_symbol
+from server.calc_module import  crypto_range_data_from_symbol, stock_returns
 from server.twitter_sentiment import find_twitter_sentiment
 
 tags_metadata = [
@@ -139,6 +139,7 @@ async def get_my_call_trades(symbol: str, days:int = 7) -> dict:
 @router.get("/options/put_trades/{symbol}")
 async def get_my_put_trades(symbol: str, days:int = 7) -> dict:
     return best_put_trades(symbol, days)
+
 @router.get("/options/put_protection/{symbol}")
 async def get_my_put_protection(symbol: str, days:int = 7) -> dict:
     return best_put_protection(symbol, days)
@@ -182,6 +183,10 @@ async def get_div_details(symbol: str) -> dict:
 @router.get("/stocks/details/{symbol}")
 async def get_stock_details(symbol: str) -> dict:
     return get_current_stock_details(symbol)
+
+@router.get("/stocks/returns/{symbol}")
+async def get_stock_returns(symbol: str, n_days:int = 5) -> dict:
+    return stock_returns(symbol,n_days)
 
 @router.get("/sentiment/twitter/{symbol}")
 async def get_twitter_sentiments_details(symbol: str, num_of_tweets:int=10) -> dict:
