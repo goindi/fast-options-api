@@ -631,7 +631,7 @@ def stock_volume (symbol:str, n_days:int):
 
 def stock_returns(symbol:str, n_days:int):
     symbol = symbol.upper()
-    if is_cache_good(f'{symbol}|price|{n_days}'):
+    if is_cache_good(f'{symbol}|price|{n_days}', CACHE_TIMEOUT*3):
         return ast.literal_eval(r.hget(f'{symbol}|price|{n_days}','value'))
     x = yf.Ticker(symbol)
     df = x.history(period='1y', interval='1d')

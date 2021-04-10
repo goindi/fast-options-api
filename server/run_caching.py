@@ -7,7 +7,7 @@ import time
 from random import randint
 from datetime import datetime, timedelta
 #from cache_module import check_is_trading
-from calc_module import range_data_from_symbol, prob_move_pct,  amt_to_invest, check_is_trading, best_call_trades, crypto_range_data_from_symbol
+from calc_module import range_data_from_symbol, prob_move_pct,  amt_to_invest, check_is_trading, best_call_trades, crypto_range_data_from_symbol,stock_returns
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 CACHE_TIMEOUT = 1200
 SYMBOL_LIST = ["AAL","AAPL","ABBV","ACB","AI","AMC","AMD","AMZN","APHA","ARKK","BB","BLNK","BNGO","C","CCIV","CCL","CLOV","COST","CRSR","DKNG","EEM","F","FB","FSLY","FSR","FUBO","FXI","G","GDX","GE","GILD","GLD","GM","GME","GO","GOLD","GSAT","GTT","HUGE","HYG","HYLN","IBM","IMO","IPO","IWM","K","KMPH","L","LAZR","LI","LMND","MARA","MO","MSFT","MU","MVIS","NIO","NOK","NVDA","OCGN","PINS","PLTR","PLUG","PSTH","PTON","QQQ","R","RIOT","RKT","RSI","SE","SENS","SI","SKT","SLV","SNAP","SNDL","SOS","SOXL","SPCE","SPY","SQ","SQQQ","T","TD","TGT","TLRY","TLT","TSLA","TWTR","XOM","ZM"]
@@ -48,9 +48,15 @@ def run_caching():
         time.sleep(randint(3,10))
         range_data_from_symbol(i, 14, 1.15)
         time.sleep(randint(3,10))
+        range_data_from_symbol(i, 28, 1.15)
         best_call_trades(i, 7)
         time.sleep(randint(3,10))
         best_call_trades(i, 14)
+        time.sleep(randint(3,10))
+        best_call_trades(i, 28)
+        time.sleep(randint(3,10))
+        stock_returns(i, 5)
+
     for i in PANI_LIST:
         range_data_from_symbol(i, 7, 1.15)
         time.sleep(randint(3,10))
