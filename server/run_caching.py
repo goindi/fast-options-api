@@ -71,10 +71,12 @@ while True:
     open_time = open_time.replace(minute=30)
     close_time = d1.replace(hour=16)
     close_time = close_time.replace(minute=30)
-    if r.hget(curr_date,"trading_date") == "yes":
-        run_caching()
-        r.hset(curr_date,"cache_exists","yes")
-    elif not r.hget(curr_date,"cache_exists"):
-        run_caching()
-        r.hset(curr_date,"cache_exists","yes")
+    run_caching()
+    r.hset(curr_date,"cache_exists","yes")
+   #if r.hget(curr_date,"trading_date") == "yes":
+   #    run_caching()
+   #    r.hset(curr_date,"cache_exists","yes")
+   #elif not r.hget(curr_date,"cache_exists"):
+   #    run_caching()
+   #    r.hset(curr_date,"cache_exists","yes")
     time.sleep(CACHE_TIMEOUT)
