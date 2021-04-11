@@ -513,13 +513,14 @@ def amt_to_invest(symbol:str,n_days:int):
     symbol=symbol.upper()
     if is_cache_good(f'{symbol}|kelly|{n_days}'):
         return ast.literal_eval(r.hget(f'{symbol}|kelly|{n_days}','value'))
-
     prob_dict = prob_move_pct(symbol, n_days,0)
     if "error" in prob_dict:
         return {"error":"No options were found"}
     curr_date = str(datetime.date(datetime.now()))
     days_to_exp = abs(datetime.strptime(prob_dict['expiry'],'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
-    return_dict = {"symbol":symbol, "kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry'], "prob_up":prob_dict['prob_up'],"prob_down":prob_dict['prob_down'], "kelly2":prob_dict['prob_up']-0.5}
+    prob_dict2 = prob_move_pct(symbol, n_days,10)
+
+    return_dict = {"symbol":symbol, "kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry'], "prob_up":prob_dict['prob_up'],"prob_down":prob_dict['prob_down'], "kelly2":prob_dict['prob_up']-0.5, "prob_up_n":prob_dict2['prob_up'],"prob_down_n":prob_dict2['prob_down']}
     r.hset(f'{symbol}|kelly|{n_days}','time',datetime.utcnow().strftime('%s'))
     r.hset(f'{symbol}|kelly|{n_days}','value',str(return_dict))
     return return_dict
