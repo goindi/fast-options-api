@@ -231,7 +231,7 @@ def kelly_fraction(win_prob : float, win_loss_ratio:float)->float:
 
 def best_call_trades(symbol, num_of_days):
     symbol=symbol.upper()
-    if is_cache_good(f'{symbol}|calltrade|{num_of_days}'):
+    if is_cache_good(f'{symbol}|calltrade|{num_of_days}',7200):
         return ast.literal_eval(r.hget(f'{symbol}|calltrade|{num_of_days}','value'))
     try:
         c = Call(symbol)
@@ -294,7 +294,7 @@ def best_call_trades(symbol, num_of_days):
 
         best_call_written['expiry'] = expiry_to_use
         return_dict = {"symbol":symbol,'best_spread':best_spread,'best_call':best_call_written}
-        if best_spread or best_call_written:
+        if best_call_written:
             r.hset(f'{symbol}|calltrade|{num_of_days}','time',datetime.utcnow().strftime('%s'))
             r.hset(f'{symbol}|calltrade|{num_of_days}','value',str(return_dict))
         return return_dict
@@ -657,7 +657,7 @@ def stock_returns(symbol:str, n_days:int):
 
 
 def is_cache_good(cache_key, cache_timeout = CACHE_TIMEOUT ):
-    cache_timeout = CACHE_TIMEOUT + randint(1,700)
+    cache_timeout = CACHE_TIMEOUT + randint(1,400)
     d1 = datetime.now()
     curr_date = str(date.today())
     open_time = d1.replace(hour=9)
@@ -707,4 +707,13 @@ def get_current_stock_details(symbol:str):
     return_dict["div_yld"] = info['dividendYield']
     r.hset(symbol,'time',datetime.utcnow().strftime('%s'))
     r.hset(symbol,'value',str(return_dict))
+    return return_dict
+
+def brad_calls():
+    BRAD_LIST = ["ABBV","GILD","GME","IBM", "MO", "T", "XOM"]
+    return_dict = {}
+    for i in BRAD_LIST:
+        return_dict[i] = [ast.literal_eval(r.hget("{i}|calltrade|7","value"))['best_call']]
+        return_dict[i].append(ast.literal_eval(r.hget("{i}|calltrade|14","value"))['best_call'])
+        return_dict[i].append(ast.literal_eval(r.hget("{i}|calltrade|28","value"))['best_call'])
     return return_dict
