@@ -713,7 +713,7 @@ def brad_calls():
     BRAD_LIST = ["ABBV","GILD","GME","IBM", "MO", "T", "XOM"]
     return_dict = {}
     for i in BRAD_LIST:
-        return_dict[i] = [ast.literal_eval(r.hget("{i}|calltrade|7","value"))['best_call']]
-        return_dict[i].append(ast.literal_eval(r.hget("{i}|calltrade|14","value"))['best_call'])
-        return_dict[i].append(ast.literal_eval(r.hget("{i}|calltrade|28","value"))['best_call'])
+        return_dict[i] = [ast.literal_eval(r.hget(f"{i}|calltrade|7","value"))['best_call']]
+        return_dict[i].append(ast.literal_eval(r.hget(f"{i}|calltrade|14","value"))['best_call'])
+        return_dict[i].append(ast.literal_eval(r.hget(f"{i}|calltrade|28","value"))['best_call'])
     return return_dict
