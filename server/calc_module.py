@@ -513,22 +513,25 @@ def amt_to_invest(symbol:str,n_days:int):
     symbol=symbol.upper()
     if is_cache_good(f'{symbol}|kelly|{n_days}'):
         return ast.literal_eval(r.hget(f'{symbol}|kelly|{n_days}','value'))
-    prob_dict = prob_move_pct(symbol, n_days,0)
-    if "error" in prob_dict:
+    try:
+        prob_dict = prob_move_pct(symbol, n_days,0)
+        if "error" in prob_dict:
+            return {"error":"No options were found"}
+        curr_date = str(datetime.date(datetime.now()))
+        days_to_exp = abs(datetime.strptime(prob_dict['expiry'],'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
+        prob_dict2 = prob_move_pct(symbol, n_days,10)
+        b = prob_dict2['prob_up']*0.1
+        a = prob_dict2['prob_down']*0.1
+        #Kelly_k is 1/3rd of the kelly = W/a - L/b
+        # a is money lost when down and b is money made when up. since we are using 10% move the money made=money_lost = 10% so it cancels out
+        #and we normalize a = 1 so b becomes b/a. And we use fractional
+        kelly_k = prob_dict['prob_up'] -(1-prob_dict['prob_up'])/(prob_dict2['prob_up']/prob_dict2['prob_down'])
+        return_dict = {"symbol":symbol, "kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry'], "prob_up":prob_dict['prob_up'],"prob_down":prob_dict['prob_down'], "kelly2":prob_dict['prob_up']-0.5, "prob_up_n":prob_dict2['prob_up'],"prob_down_n":prob_dict2['prob_down'],"kelly_k":kelly_k/3}
+        r.hset(f'{symbol}|kelly|{n_days}','time',datetime.utcnow().strftime('%s'))
+        r.hset(f'{symbol}|kelly|{n_days}','value',str(return_dict))
+        return return_dict
+    except:
         return {"error":"No options were found"}
-    curr_date = str(datetime.date(datetime.now()))
-    days_to_exp = abs(datetime.strptime(prob_dict['expiry'],'%d-%m-%Y') - datetime.strptime(curr_date,'%Y-%m-%d')).days
-    prob_dict2 = prob_move_pct(symbol, n_days,10)
-    b = prob_dict2['prob_up']*0.1
-    a = prob_dict2['prob_down']*0.1
-    #Kelly_k is 1/3rd of the kelly = W/a - L/b
-    # a is money lost when down and b is money made when up. since we are using 10% move the money made=money_lost = 10% so it cancels out
-    #and we normalize a = 1 so b becomes b/a. And we use fractional
-    kelly_k = prob_dict['prob_up'] -(1-prob_dict['prob_up'])/(prob_dict2['prob_up']/prob_dict2['prob_down'])
-    return_dict = {"symbol":symbol, "kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry'], "prob_up":prob_dict['prob_up'],"prob_down":prob_dict['prob_down'], "kelly2":prob_dict['prob_up']-0.5, "prob_up_n":prob_dict2['prob_up'],"prob_down_n":prob_dict2['prob_down'],"kelly_k":kelly_k/3}
-    r.hset(f'{symbol}|kelly|{n_days}','time',datetime.utcnow().strftime('%s'))
-    r.hset(f'{symbol}|kelly|{n_days}','value',str(return_dict))
-    return return_dict
 
 def div_details(symbol:str):
     symbol = symbol.upper()
