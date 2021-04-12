@@ -25,6 +25,19 @@ def run_caching():
     # for i in SYMBOL_LIST:
     #     range_data_from_symbol(i, 7, 1.15)
     #     time.sleep(5)
+    for i in BRAD_LIST:
+        range_data_from_symbol(i, 7, 1.15)
+        time.sleep(randint(3,10))
+        range_data_from_symbol(i, 14, 1.15)
+        time.sleep(randint(3,10))
+        range_data_from_symbol(i, 28, 1.15)
+        best_call_trades(i, 7)
+        time.sleep(randint(3,10))
+        best_call_trades(i, 14)
+        time.sleep(randint(3,10))
+        best_call_trades(i, 28)
+        time.sleep(randint(3,10))
+        stock_returns(i, 5)
     for i in CRYPTO:
         crypto_range_data_from_symbol(i, 7, 1.15)
     for i in ORACLE:
@@ -43,19 +56,6 @@ def run_caching():
         amt_to_invest(i, 7)
         time.sleep(randint(3,10))
         prob_move_pct(i, 7,10)
-    for i in BRAD_LIST:
-        range_data_from_symbol(i, 7, 1.15)
-        time.sleep(randint(3,10))
-        range_data_from_symbol(i, 14, 1.15)
-        time.sleep(randint(3,10))
-        range_data_from_symbol(i, 28, 1.15)
-        best_call_trades(i, 7)
-        time.sleep(randint(3,10))
-        best_call_trades(i, 14)
-        time.sleep(randint(3,10))
-        best_call_trades(i, 28)
-        time.sleep(randint(3,10))
-        stock_returns(i, 5)
 
     for i in PANI_LIST:
         range_data_from_symbol(i, 7, 1.15)
