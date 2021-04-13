@@ -631,6 +631,8 @@ def stock_volume (symbol:str, n_days:int):
                 weight = (390*60)/delta.total_seconds()
                 price = details_dict["mid"]
     today_volume = details_dict['curr_volume']*weight
+    print(weight)
+    print(today_volume)
     s = yf.Ticker(symbol)
     p = stats.percentileofscore(s.history()[-n_days:].Volume,today_volume)
     return_dict =  {'symbol':symbol, 'percentile':p, 'volume':today_volume, 'avg_10d_volume':details_dict['avg_10d_volume'],'stock_price':price}
