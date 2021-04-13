@@ -231,7 +231,7 @@ def kelly_fraction(win_prob : float, win_loss_ratio:float)->float:
 
 def best_call_trades(symbol, num_of_days):
     symbol=symbol.upper()
-    if is_cache_good(f'{symbol}|calltrade|{num_of_days}',7200):
+    if is_cache_good(f'{symbol}|calltrade|{num_of_days}',3600):
         return ast.literal_eval(r.hget(f'{symbol}|calltrade|{num_of_days}','value'))
     try:
         c = Call(symbol)
