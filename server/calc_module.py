@@ -575,8 +575,8 @@ def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
         return_dict["avg_10d_volume"] = info["averageVolume10days"]
         return_dict["high_slope"] = high_slope
         return_dict["low_slope"] = low_slope
-        #r.hset(f'{symbol}|cryptorange|{n_days}|{sigma}','time',datetime.utcnow().strftime('%s'))
-        #r.hset(f'{symbol}|cryptorange|{n_days}|{sigma}','value',str(return_dict))
+        r.hset(f'{symbol}|cryptorange|{n_days}|{sigma}','time',datetime.utcnow().strftime('%s'))
+        r.hset(f'{symbol}|cryptorange|{n_days}|{sigma}','value',str(return_dict))
         return return_dict
     except:
         return {"symbol": "Error", "error": "No Data found for %s"%symbol}
