@@ -558,10 +558,13 @@ def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
     try:
         y = yf.Ticker(symbol)
         info = y.info
-        my_df = y.history().Close[-21:]
+        h = y.history()
+        my_df = h.Close[-21:]
         curr_px = my_df[-1]
         std_dev = np.std(my_df[-21:-1])
         n_days_sigma = std_dev*math.sqrt(n_days)
+        high_slope,high_intercept = np.polyfit(range(1,len(h)+1),h.High*10/h.High.mean(),1)
+        low_slope,low_intercept = np.polyfit(range(1,len(h)+1),h.Low*10/h.Low.mean(),1)
         return_dict["symbol"] = symbol
         return_dict["desc"] = info['shortName']
         return_dict["price"] = curr_px
@@ -570,8 +573,10 @@ def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
         return_dict["high_range"] = curr_px + n_days_sigma*sigma
         return_dict["today_volume"] =info['volume24Hr']
         return_dict["avg_10d_volume"] = info["averageVolume10days"]
-        r.hset(f'{symbol}|cryptorange|{n_days}|{sigma}','time',datetime.utcnow().strftime('%s'))
-        r.hset(f'{symbol}|cryptorange|{n_days}|{sigma}','value',str(return_dict))
+        return_dict["high_slope"] = high_slope
+        return_dict["low_slope"] = low_slope
+        #r.hset(f'{symbol}|cryptorange|{n_days}|{sigma}','time',datetime.utcnow().strftime('%s'))
+        #r.hset(f'{symbol}|cryptorange|{n_days}|{sigma}','value',str(return_dict))
         return return_dict
     except:
         return {"symbol": "Error", "error": "No Data found for %s"%symbol}
