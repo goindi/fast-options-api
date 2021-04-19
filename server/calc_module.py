@@ -662,7 +662,35 @@ def stock_returns(symbol:str, n_days:int):
     r.hset(f'{symbol}|price|{n_days}','value',str(return_dict))
     return return_dict
 
+def update_stock_likes(symbol,vote_val):
+    symbol = symbol.upper()
+    if r.exists(f"{symbol}|votes"):
+        if vote_val>0:
+            up = 0
+            if r.hget(f"{symbol}|votes","up"):
+                up = int(r.hget(f"{symbol}|votes","up"))
+            r.hset(f"{symbol}|votes","up", up + vote_val)
+        else:
+            down = 0
+            if r.hget(f"{symbol}|votes","down"):
+                down = int(r.hget(f"{symbol}|votes","down"))
+            r.hset(f"{symbol}|votes","down", down + vote_val)
+    else:
+        if vote_val>0:
+            r.hset(f"{symbol}|votes","up", vote_val)
+        else:
+            r.hset(f"{symbol}|votes","down", vote_val)
 
+def get_stock_likes(symbol):
+
+    symbol = symbol.upper()
+    return_dict =  {"up":0, "down":0}  
+    if r.exists(f"{symbol}|votes"):
+        return_dict = {"up":r.hget(f"{symbol}|votes","up"), "down":r.hget(f"{symbol}|votes","down")}  
+    return return_dict
+        
+    
+    
 def is_cache_good(cache_key, cache_timeout = CACHE_TIMEOUT ):
     cache_timeout = CACHE_TIMEOUT + randint(1,400)
     d1 = datetime.now()

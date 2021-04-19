@@ -5,7 +5,7 @@ from fastapi.encoders import jsonable_encoder
 from datetime import datetime
 from server.calc_module import range_data_from_symbol, best_call_trades, best_put_trades, get_gamma_squeeze, get_current_stock_details
 from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume, best_put_protection
-from server.calc_module import  crypto_range_data_from_symbol, stock_returns, brad_calls
+from server.calc_module import  crypto_range_data_from_symbol, stock_returns, brad_calls , update_stock_likes, get_stock_likes
 from server.twitter_sentiment import find_twitter_sentiment
 
 tags_metadata = [
@@ -187,6 +187,14 @@ async def get_stock_details(symbol: str) -> dict:
 @router.get("/stocks/returns/{symbol}")
 async def get_stock_returns(symbol: str, n_days:int = 5) -> dict:
     return stock_returns(symbol,n_days)
+    
+@router.put("/stocks/likes/{symbol}")
+async def put_stock_likes(symbol: str, vote_val:int = 1) -> dict:
+    return update_stock_likes(symbol,vote_val)
+
+@router.get("/stocks/likes/{symbol}")
+async def get_likes(symbol: str) -> dict:
+    return get_stock_likes(symbol)
 
 @router.get("/sentiment/twitter/{symbol}")
 async def get_twitter_sentiments_details(symbol: str, num_of_tweets:int=10) -> dict:
@@ -199,3 +207,5 @@ async def get_range_data(symbol: str, days:int = 7, sigma:float = 1.15) -> dict:
 @router.get("/helper/brad")
 async def get_brad_calls() -> dict:
     return brad_calls()
+    
+  
