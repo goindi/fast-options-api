@@ -7,6 +7,7 @@ from server.calc_module import range_data_from_symbol, best_call_trades, best_pu
 from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume, best_put_protection
 from server.calc_module import  crypto_range_data_from_symbol, stock_returns, brad_calls , update_stock_likes, get_stock_likes
 from server.twitter_sentiment import find_twitter_sentiment
+from server.db.crud import update_votes, get_votes
 
 tags_metadata = [
     {
@@ -195,6 +196,14 @@ async def put_stock_likes(symbol: str, vote_val:int = 1) -> dict:
 @router.get("/stocks/likes/{symbol}")
 async def get_likes(symbol: str) -> dict:
     return get_stock_likes(symbol)
+
+@router.get("/stocks/getvotes/{symbol}")
+async def get_votes_db(symbol: str) -> dict:
+    return get_votes(symbol)
+
+@router.put("/stocks/setvotes/{symbol}")
+async def set_stock_votes(symbol: str, user:str="anon@anon.com", vote_up:int = 0, vote_down:int=0):
+    return update_votes(symbol,user,vote_up,vote_down)
 
 @router.get("/sentiment/twitter/{symbol}")
 async def get_twitter_sentiments_details(symbol: str, num_of_tweets:int=10) -> dict:
