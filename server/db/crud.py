@@ -30,7 +30,7 @@ def update_votes(my_symbol,user,up,down):
 def get_votes(symbol):
     symbol = symbol.upper()
     session = SessionLocal()
-    s = session.execute(f"select (upvote-downvote) from votes where symbol='{symbol}'")
+    s = session.execute(f"select sum(upvote-downvote) from votes where symbol='{symbol}'")
     c = s.fetchone()
     if c:
         return {'votes':c[0]}
