@@ -28,7 +28,7 @@ def update_votes(my_symbol,user,up,down):
 
 
 def get_votes(symbol):
-    my_symbol = my_symbol.upper()
+    symbol = symbol.upper()
     session = SessionLocal()
     s = session.execute(f"select (upvote-downvote) from votes where symbol='{symbol}'")
     c = s.fetchone()

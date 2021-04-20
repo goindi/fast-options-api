@@ -202,7 +202,7 @@ async def get_votes_db(symbol: str) -> dict:
     return get_votes(symbol)
 
 @router.put("/stocks/setvotes/{symbol}")
-async def set_stock_votes(symbol: str, user:str="anon@anon.com", vote_up:int = 0, vote_down:int=0):
+async def set_stock_votes_db(symbol: str, user:str="anon@anon.com", vote_up:int = 0, vote_down:int=0):
     return update_votes(symbol,user,vote_up,vote_down)
 
 @router.get("/sentiment/twitter/{symbol}")
