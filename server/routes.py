@@ -201,7 +201,7 @@ async def get_likes(symbol: str) -> dict:
 async def get_ratings_db(symbol: str) -> dict:
     return get_ratings(symbol)
 
-@router.get("/stocks/getuserratings/{symbol}/{user}")
+@router.get("/stocks/getuserratings/{symbol}")
 async def get_users_ratings_db(symbol: str, user_email: str, secret_key:str="no") -> dict:
     if (secret_key == "Fat Neo"):
         return get_users_ratings(symbol,user_email)
