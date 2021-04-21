@@ -203,7 +203,7 @@ async def get_ratings_db(symbol: str) -> dict:
 
 @router.put("/stocks/setratings/{symbol}")
 async def set_stock_ratings_db(symbol: str, user:str="anon@anon.com", ratings:int = 0) -> dict:
-    return update_ratings(symbol,user,vote_up,vote_down)
+    return update_ratings(symbol,user,ratings)
 
 @router.get("/sentiment/twitter/{symbol}")
 async def get_twitter_sentiments_details(symbol: str, num_of_tweets:int=10) -> dict:
