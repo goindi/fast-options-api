@@ -1,4 +1,3 @@
-
 from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from server.db.database import Base
@@ -11,10 +10,10 @@ class User(Base):
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
 
-    likes = relationship("Votes", back_populates="owner")
+    likes = relationship("Rating", back_populates="owner")
 
 
-class Ratings(Base):
+class Rating(Base):
     __tablename__ = "ratings"
     id = Column(Integer, primary_key=True, index=True)
     symbol = Column(String, index=True)
@@ -24,7 +23,7 @@ class Ratings(Base):
     owner = relationship("User", back_populates="likes")
 
 #User.__table__.create(bind=engine, checkfirst=True)
-#Ratings.__table__.create(bind=engine, checkfirst=True)
+#Rating.__table__.create(bind=engine, checkfirst=True)
 #
 #session = SessionLocal()
 #u = User(email="foo@bar.com", hashed_password="cc")

@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from server.db.database import engine, SessionLocal
-from server.db.models import User, Ratings
+from server.db.models import User, Rating
 
 def get_db():
     db = SessionLocal()
@@ -17,24 +17,24 @@ def update_ratings(my_symbol,user,user_ratings):
         u = create_user(user)
     else:
         u = u.first()
-    v = session.query(Ratings).filter(Ratings.user_email==u.email).filter(Ratings.symbol==my_symbol)
-    if v.count() == 0:
-        v = create_vote(my_symbol,u.email)
+    r = session.query(Rating).filter(Rating.user_email==u.email).filter(Rating.symbol==my_symbol)
+    if r.count() == 0:
+        r = create_ratings(my_symbol,u.email,user_ratings)
     else:
-        v = v.first()
-    v.ratings = v.ratings+user_ratings
+        r = r.first()
+    r.ratings = r.ratings + user_ratings
     session.commit()
 
 
 def get_ratings(symbol):
     symbol = symbol.upper()
     session = SessionLocal()
-    s = session.execute(f"select average(ratings) from ratings where symbol='{symbol}'")
+    s = session.execute(f"select avg(ratings) from ratings where symbol='{symbol}'")
     c = s.fetchone()
-    if c:
-        return {'Ratings':c[0]}
+    if c[0]:
+        return {'Rating':float(c[0])}
     else:
-        return {'Ratings':0}
+        return {'Rating':0}
 
 
 def create_user(user_email,pwd="whateves"):
@@ -45,11 +45,11 @@ def create_user(user_email,pwd="whateves"):
     session.refresh(u)
     return u
 
-def create_vote(my_symbol,email):
+def create_ratings(my_symbol,email,user_ratings=0):
     my_symbol = my_symbol.upper()
-    v = Ratings(user_email=email, symbol=my_symbol)
+    r = Rating(user_email=email, symbol=my_symbol, ratings=user_ratings)
     session = SessionLocal()
-    session.add(v)
+    session.add(r)
     session.commit()
-    session.refresh(v)
-    return v
+    session.refresh(r)
+    return r
