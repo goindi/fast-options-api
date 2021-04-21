@@ -7,7 +7,7 @@ from server.calc_module import range_data_from_symbol, best_call_trades, best_pu
 from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume, best_put_protection
 from server.calc_module import  crypto_range_data_from_symbol, stock_returns, brad_calls , update_stock_likes, get_stock_likes
 from server.twitter_sentiment import find_twitter_sentiment
-from server.db.crud import update_ratings, get_ratings
+from server.db.crud import update_ratings, get_ratings, get_users_ratings
 
 tags_metadata = [
     {
@@ -201,9 +201,17 @@ async def get_likes(symbol: str) -> dict:
 async def get_ratings_db(symbol: str) -> dict:
     return get_ratings(symbol)
 
+@router.get("/stocks/getuserratings/{symbol}/{user}")
+async def get_users_ratings_db(symbol: str, user_email: str, secret_key:str="no") -> dict:
+    if (secret_key == "Fat Neo"):
+        return get_users_ratings(symbol,user_email)
+    return {"error":"Unauthorized"}
+
 @router.put("/stocks/setratings/{symbol}")
-async def set_stock_ratings_db(symbol: str, user:str="anon@anon.com", ratings:int = 0) -> dict:
-    return update_ratings(symbol,user,ratings)
+async def set_stock_ratings_db(symbol: str, user:str="anon@anon.com",secret_key:str="no", ratings:int = 0) -> dict:
+    if (secret_key == "Fat Neo"):
+        return update_ratings(symbol,user,ratings)
+    return {"error":"Unauthorized"}
 
 @router.get("/sentiment/twitter/{symbol}")
 async def get_twitter_sentiments_details(symbol: str, num_of_tweets:int=10) -> dict:

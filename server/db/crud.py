@@ -35,6 +35,16 @@ def get_ratings(symbol):
         return {'Rating':float(c[0])}
     else:
         return {'Rating':0}
+def get_users_ratings(my_symbol,user_email):
+    symbol = symbol.upper()
+    session = SessionLocal()
+    r = session.query(Rating).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol)
+    if r.count() == 0:
+        return {'Rating':0}
+    else:
+        return {'Rating':r.first().ratings}
+
+
 
 
 def create_user(user_email,pwd="whateves"):
