@@ -7,7 +7,7 @@ from server.calc_module import range_data_from_symbol, best_call_trades, best_pu
 from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume, best_put_protection
 from server.calc_module import  crypto_range_data_from_symbol, stock_returns, brad_calls , update_stock_likes, get_stock_likes
 from server.twitter_sentiment import find_twitter_sentiment
-from server.db.crud import update_votes, get_votes
+from server.db.crud import update_ratings, get_ratings
 
 tags_metadata = [
     {
@@ -188,7 +188,7 @@ async def get_stock_details(symbol: str) -> dict:
 @router.get("/stocks/returns/{symbol}")
 async def get_stock_returns(symbol: str, n_days:int = 5) -> dict:
     return stock_returns(symbol,n_days)
-    
+
 @router.put("/stocks/likes/{symbol}")
 async def put_stock_likes(symbol: str, vote_val:int = 1) -> dict:
     return update_stock_likes(symbol,vote_val)
@@ -197,13 +197,13 @@ async def put_stock_likes(symbol: str, vote_val:int = 1) -> dict:
 async def get_likes(symbol: str) -> dict:
     return get_stock_likes(symbol)
 
-@router.get("/stocks/getvotes/{symbol}")
-async def get_votes_db(symbol: str) -> dict:
-    return get_votes(symbol)
+@router.get("/stocks/getratings/{symbol}")
+async def get_ratings_db(symbol: str) -> dict:
+    return get_ratings(symbol)
 
-@router.put("/stocks/setvotes/{symbol}")
-async def set_stock_votes_db(symbol: str, user:str="anon@anon.com", vote_up:int = 0, vote_down:int=0):
-    return update_votes(symbol,user,vote_up,vote_down)
+@router.put("/stocks/setratings/{symbol}")
+async def set_stock_ratings_db(symbol: str, user:str="anon@anon.com", ratings:int = 0) -> dict:
+    return update_ratings(symbol,user,vote_up,vote_down)
 
 @router.get("/sentiment/twitter/{symbol}")
 async def get_twitter_sentiments_details(symbol: str, num_of_tweets:int=10) -> dict:
@@ -216,5 +216,3 @@ async def get_range_data(symbol: str, days:int = 7, sigma:float = 1.15) -> dict:
 @router.get("/helper/brad")
 async def get_brad_calls() -> dict:
     return brad_calls()
-    
-  

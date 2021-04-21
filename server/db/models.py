@@ -14,21 +14,19 @@ class User(Base):
     likes = relationship("Votes", back_populates="owner")
 
 
-class Votes(Base):
-    __tablename__ = "votes"
+class Ratings(Base):
+    __tablename__ = "ratings"
     id = Column(Integer, primary_key=True, index=True)
     symbol = Column(String, index=True)
-    upvote = Column(Integer, default=0)
-    downvote = Column(Integer, default=0)
+    ratings = Column(Integer, default=0)
     user_email = Column(String, ForeignKey("users.email"))
 
     owner = relationship("User", back_populates="likes")
 
 #User.__table__.create(bind=engine, checkfirst=True)
-#Votes.__table__.create(bind=engine, checkfirst=True)
+#Ratings.__table__.create(bind=engine, checkfirst=True)
 #
 #session = SessionLocal()
 #u = User(email="foo@bar.com", hashed_password="cc")
 #session.add(u)
 #session.commit()
-
