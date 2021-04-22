@@ -1,4 +1,5 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime
+from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from server.db.database import engine, SessionLocal
 from server.db.database import Base
@@ -16,10 +17,12 @@ class User(Base):
 
 class Rating(Base):
     __tablename__ = "ratings"
+    
     id = Column(Integer, primary_key=True, index=True)
     symbol = Column(String, index=True)
     ratings = Column(Integer, default=0)
     user_email = Column(String, ForeignKey("users.email"))
+    time_created = Column(DateTime(timezone=False), server_default=func.now())
 
     owner = relationship("User", back_populates="likes")
 

@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from server.db.database import engine, SessionLocal
 from server.db.models import User, Rating
+from sqlalchemy.sql import func
 
 def get_db():
     db = SessionLocal()
@@ -17,11 +18,12 @@ def update_ratings(my_symbol,user,user_ratings):
         u = create_user(user)
     else:
         u = u.first()
-    r = session.query(Rating).filter(Rating.user_email==u.email).filter(Rating.symbol==my_symbol)
-    if r.count() == 0:
-        r = create_ratings(my_symbol,u.email,user_ratings)
-    else:
-        r = r.first()
+    # r = session.query(Rating).filter(Rating.user_email==u.email).filter(Rating.symbol==my_symbol)
+    # if r.count() == 0:
+    #     r = create_ratings(my_symbol,u.email,user_ratings)
+    # else:
+    #     r = r.first()
+    r = create_ratings(my_symbol,u.email,user_ratings)
     r.ratings = user_ratings
     session.commit()
 
@@ -35,14 +37,15 @@ def get_ratings(symbol):
         return {'Rating':float(c[0])}
     else:
         return {'Rating':0}
+
 def get_users_ratings(my_symbol,user_email):
     my_symbol = my_symbol.upper()
     session = SessionLocal()
-    r = session.query(Rating).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol)
-    if r.count() == 0:
-        return {'Rating':0}
+    r = session.query(func.avg(Rating.ratings).label('average')).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).scalar()
+    if r:
+        return {'Rating':float(r)}
     else:
-        return {'Rating':r.first().ratings}
+        return {'Rating':0}
 
 
 def create_user(user_email,pwd="whateves"):
