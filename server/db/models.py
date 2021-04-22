@@ -17,7 +17,7 @@ class User(Base):
 
 class Rating(Base):
     __tablename__ = "ratings"
-    
+
     id = Column(Integer, primary_key=True, index=True)
     symbol = Column(String, index=True)
     ratings = Column(Integer, default=0)
@@ -26,8 +26,8 @@ class Rating(Base):
 
     owner = relationship("User", back_populates="likes")
 
-User.__table__.create(bind=engine, checkfirst=True)
-Rating.__table__.create(bind=engine, checkfirst=True)
+#User.__table__.create(bind=engine, checkfirst=True)
+#Rating.__table__.create(bind=engine, checkfirst=True)
 #
 #session = SessionLocal()
 #u = User(email="foo@bar.com", hashed_password="cc")

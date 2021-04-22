@@ -36,7 +36,7 @@ def get_ratings(symbol):
     if c[0]:
         return {'Rating':float(c[0])}
     else:
-        return {'Rating':0}
+        return {'Rating':-107}
 
 def get_users_ratings(my_symbol,user_email):
     my_symbol = my_symbol.upper()
@@ -45,7 +45,7 @@ def get_users_ratings(my_symbol,user_email):
     if r:
         return {'Rating':float(r)}
     else:
-        return {'Rating':0}
+        return {'Rating':-107}
 
 
 def create_user(user_email,pwd="whateves"):
