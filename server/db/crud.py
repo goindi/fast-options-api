@@ -22,7 +22,7 @@ def update_ratings(my_symbol,user,user_ratings):
         r = create_ratings(my_symbol,u.email,user_ratings)
     else:
         r = r.first()
-    r.ratings = r.ratings + user_ratings
+    r.ratings = user_ratings
     session.commit()
 
 
