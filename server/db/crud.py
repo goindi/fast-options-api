@@ -52,9 +52,9 @@ def get_symbol_ratings_of_user(my_symbol,user_email):
     r = session.query(Rating).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).order_by(Rating.time_created.desc()).first()
     session.close()
     if r:
-        return {'Rating':r.ratings,"Change":r.ratings_change}
+        return {'Rating':r.ratings,"Change":r.ratings_change,"ValueSaved":r.curr_value}
     else:
-        return {'Rating':0,"Change":"NA"}
+        return {'Rating':0,"Change":"NA", "ValueSaved":0}
 
 def get_all_ratings_of_user(user_email):
     session = SessionLocal()
