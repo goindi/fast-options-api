@@ -18,14 +18,12 @@ def update_ratings(my_symbol,user,user_ratings):
         u = create_user(user)
     else:
         u = u.first()
-    # r = session.query(Rating).filter(Rating.user_email==u.email).filter(Rating.symbol==my_symbol)
-    # if r.count() == 0:
-    #     r = create_ratings(my_symbol,u.email,user_ratings)
-    # else:
-    #     r = r.first()
-    r = create_ratings(my_symbol,u.email,user_ratings)
-    r.ratings = user_ratings
-    session.commit()
+    r = session.query(Rating).filter(Rating.user_email==user).filter(Rating.symbol==my_symbol).order_by(Rating.time_created.desc()).first()
+    if not r:
+        r = create_ratings(my_symbol,u.email,user_ratings)
+    else:
+        change = user_ratings - r.ratings     
+        r = create_ratings(my_symbol,u.email,user_ratings,change)
     session.close()
 
 
@@ -47,9 +45,9 @@ def get_symbol_ratings_of_user(my_symbol,user_email):
     r = session.query(Rating).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).order_by(Rating.time_created.desc()).first()
     session.close()
     if r:
-        return {'Rating':r.ratings}
+        return {'Rating':r.ratings,"Change":r.ratings_change}
     else:
-        return {'Rating':0}
+        return {'Rating':0,"Change":"NA"}
 
 def get_all_ratings_of_user(user_email):
     session = SessionLocal()
@@ -63,9 +61,6 @@ def get_all_ratings_of_user(user_email):
     else:
         session.close()
         return {"error":"no entry"}
-        
-            
-
 
 def create_user(user_email,pwd="whateves"):
     u = User(email=user_email, hashed_password=pwd)
@@ -76,9 +71,9 @@ def create_user(user_email,pwd="whateves"):
     session.close()
     return u
 
-def create_ratings(my_symbol,email,user_ratings=0):
+def create_ratings(my_symbol,email,user_ratings, change=0):
     my_symbol = my_symbol.upper()
-    r = Rating(user_email=email, symbol=my_symbol, ratings=user_ratings)
+    r = Rating(user_email=email, symbol=my_symbol, ratings=user_ratings, ratings_change = change)
     session = SessionLocal()
     session.add(r)
     session.commit()

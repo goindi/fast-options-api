@@ -21,6 +21,7 @@ class Rating(Base):
     id = Column(Integer, primary_key=True, index=True)
     symbol = Column(String, index=True)
     ratings = Column(Integer, default=0)
+    ratings_change = Column(Integer, default=0)
     user_email = Column(String, ForeignKey("users.email"))
     time_created = Column(DateTime(timezone=False), server_default=func.now())
 
