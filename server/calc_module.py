@@ -525,7 +525,7 @@ def amt_to_invest(symbol:str,n_days:int):
         #Kelly_k is 1/3rd of the kelly = W/a - L/b
         # a is money lost when down and b is money made when up. since we are using 10% move the money made=money_lost = 10% so it cancels out
         #and we normalize a = 1 so b becomes b/a. And we use fractional
-        kelly_k = prob_dict['prob_up'] -(1-prob_dict['prob_up'])/(prob_dict2['prob_up']/prob_dict2['prob_down'])
+        kelly_k = prob_dict['prob_up'] - (1-prob_dict['prob_up'])/(prob_dict2['prob_up']/prob_dict2['prob_down'])
         return_dict = {"symbol":symbol, "kelly":2*prob_dict['prob_up'] - 1, "expiry":prob_dict['expiry'], "prob_up":prob_dict['prob_up'],"prob_down":prob_dict['prob_down'], "kelly2":prob_dict['prob_up']-0.5, "prob_up_n":prob_dict2['prob_up'],"prob_down_n":prob_dict2['prob_down'],"kelly_k":kelly_k/3}
         r.hset(f'{symbol}|kelly|{n_days}','time',datetime.utcnow().strftime('%s'))
         r.hset(f'{symbol}|kelly|{n_days}','value',str(return_dict))

@@ -26,6 +26,7 @@ def update_ratings(my_symbol,user,user_ratings):
     r = create_ratings(my_symbol,u.email,user_ratings)
     r.ratings = user_ratings
     session.commit()
+    session.close()
 
 
 def get_ratings(symbol):
@@ -33,6 +34,7 @@ def get_ratings(symbol):
     session = SessionLocal()
     s = session.execute(f"select avg(ratings) from ratings where symbol='{symbol}'")
     c = s.fetchone()
+    session.close()
     if c[0]:
         return {'Rating':float(c[0])}
     else:
@@ -41,9 +43,11 @@ def get_ratings(symbol):
 def get_users_ratings(my_symbol,user_email):
     my_symbol = my_symbol.upper()
     session = SessionLocal()
-    r = session.query(func.avg(Rating.ratings).label('average')).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).scalar()
+    #r = session.query(func.avg(Rating.ratings).label('average')).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).scalar()
+    r = session.query(Rating).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).order_by(Rating.time_created.desc()).first()
+    session.close()
     if r:
-        return {'Rating':float(r)}
+        return {'Rating':r.ratings}
     else:
         return {'Rating':0}
 
@@ -54,6 +58,7 @@ def create_user(user_email,pwd="whateves"):
     session.add(u)
     session.commit()
     session.refresh(u)
+    session.close()
     return u
 
 def create_ratings(my_symbol,email,user_ratings=0):
@@ -63,4 +68,5 @@ def create_ratings(my_symbol,email,user_ratings=0):
     session.add(r)
     session.commit()
     session.refresh(r)
+    session.close()
     return r
