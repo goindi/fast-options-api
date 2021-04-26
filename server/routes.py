@@ -207,8 +207,8 @@ async def get_users_ratings_db(symbol: str, user_email: str="anon@anon.com", sec
         return get_symbol_ratings_of_user(symbol,user_email)
     return {"error":"Unauthorized"}
 
-@router.get("/stocks/getalluserratings/{symbol}")
-async def get_all_users_ratings_db(user_email: str="anon@anon.com", secret_key:str="no") -> dict:
+@router.get("/stocks/getalluserratings/{user}")
+async def get_all_users_ratings_db(user_email: str, secret_key:str="no") -> dict:
     if (secret_key == "Fat Neo"):
         return get_all_ratings_of_user(user_email)
     return {"error":"Unauthorized"}
