@@ -41,9 +41,9 @@ def get_ratings(symbol):
     c = s.fetchone()
     session.close()
     if c[0]:
-        return {'Rating':float(c[0])}
+        return {'rating':float(c[0])}
     else:
-        return {'Rating':0}
+        return {'rating':0}
 
 def get_symbol_ratings_of_user(my_symbol,user_email):
     my_symbol = my_symbol.upper()
@@ -52,19 +52,19 @@ def get_symbol_ratings_of_user(my_symbol,user_email):
     r = session.query(Rating).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).order_by(Rating.time_created.desc()).first()
     session.close()
     if r:
-        return {'Rating':r.ratings,"Change":r.ratings_change,"ValueSaved":r.curr_value}
+        return {'rating':r.ratings,"change":r.ratings_change,"saved_value":r.curr_value}
     else:
-        return {'Rating':0,"Change":"NA", "ValueSaved":0}
+        return {'rating':0,"change":"NA", "saved_value":0}
 
 def get_all_ratings_of_user(user_email):
     session = SessionLocal()
     r = session.query(Rating).filter(Rating.user_email==user_email).order_by(Rating.symbol,Rating.time_created.desc()).distinct(Rating.symbol)
     if r:
-        my_dict = {}
+        my_arr = []
         for i in r:
-            my_dict[i.symbol] = i.ratings
+            my_arr.append({'symbol':i.symbol,'rating':i.ratings,'timestamp':i.time_created})
         session.close()
-        return my_dict
+        return {"user_list":my_arr}
     else:
         session.close()
         return {"error":"no entry"}
