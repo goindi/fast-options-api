@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from server.db.database import engine, SessionLocal
 from server.db.models import User, Rating
 from sqlalchemy.sql import func
+from wallstreet import Stock
 
 def get_db():
     db = SessionLocal()
@@ -14,16 +15,22 @@ def update_ratings(my_symbol,user,user_ratings):
     my_symbol = my_symbol.upper()
     session = SessionLocal()
     u = session.query(User).filter(User.email==user)
+    curr_px = 0
     if u.count() == 0:
         u = create_user(user)
     else:
         u = u.first()
+    try:
+        t = Stock(my_symbol)
+        curr_px = t.price
+    except:
+        curr_px = 0
     r = session.query(Rating).filter(Rating.user_email==user).filter(Rating.symbol==my_symbol).order_by(Rating.time_created.desc()).first()
     if not r:
-        r = create_ratings(my_symbol,u.email,user_ratings)
+        r = create_ratings(my_symbol,u.email,user_ratings, curr_px)
     else:
-        change = user_ratings - r.ratings     
-        r = create_ratings(my_symbol,u.email,user_ratings,change)
+        change = user_ratings - r.ratings
+        r = create_ratings(my_symbol,u.email,user_ratings,curr_px, change)
     session.close()
 
 
@@ -57,7 +64,7 @@ def get_all_ratings_of_user(user_email):
         for i in r:
             my_dict[i.symbol] = i.ratings
         session.close()
-        return my_dict    
+        return my_dict
     else:
         session.close()
         return {"error":"no entry"}
@@ -71,9 +78,9 @@ def create_user(user_email,pwd="whateves"):
     session.close()
     return u
 
-def create_ratings(my_symbol,email,user_ratings, change=0):
+def create_ratings(my_symbol,email,user_ratings, curr_px, change=0):
     my_symbol = my_symbol.upper()
-    r = Rating(user_email=email, symbol=my_symbol, ratings=user_ratings, ratings_change = change)
+    r = Rating(user_email=email, symbol=my_symbol, ratings=user_ratings, curr_value = curr_px, ratings_change = change)
     session = SessionLocal()
     session.add(r)
     session.commit()

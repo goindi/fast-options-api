@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, DateTime, Float
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from server.db.database import engine, SessionLocal
@@ -22,6 +22,7 @@ class Rating(Base):
     symbol = Column(String, index=True)
     ratings = Column(Integer, default=0)
     ratings_change = Column(Integer, default=0)
+    curr_value = Column(Float, default=0)
     user_email = Column(String, ForeignKey("users.email"))
     time_created = Column(DateTime(timezone=False), server_default=func.now())
 
