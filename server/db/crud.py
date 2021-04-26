@@ -40,7 +40,7 @@ def get_ratings(symbol):
     else:
         return {'Rating':0}
 
-def get_users_ratings(my_symbol,user_email):
+def get_symbol_ratings_of_user(my_symbol,user_email):
     my_symbol = my_symbol.upper()
     session = SessionLocal()
     #r = session.query(func.avg(Rating.ratings).label('average')).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).scalar()
@@ -50,6 +50,21 @@ def get_users_ratings(my_symbol,user_email):
         return {'Rating':r.ratings}
     else:
         return {'Rating':0}
+
+def get_all_ratings_of_user(user_email):
+    session = SessionLocal()
+    r = session.query(Rating).filter(Rating.user_email==user_email).order_by(Rating.symbol,Rating.time_created.desc()).distinct(Rating.symbol)
+    if r:
+        my_dict = {}
+        for i in r:
+            my_dict[i.symbol] = i.ratings
+        session.close()
+        return my_dict    
+    else:
+        session.close()
+        return {"error":"no entry"}
+        
+            
 
 
 def create_user(user_email,pwd="whateves"):
