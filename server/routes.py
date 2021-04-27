@@ -9,7 +9,7 @@ from server.calc_module import range_data_from_symbol, best_call_trades, best_pu
 from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume, best_put_protection
 from server.calc_module import  crypto_range_data_from_symbol, stock_returns, brad_calls , update_stock_likes, get_stock_likes
 from server.twitter_sentiment import find_twitter_sentiment
-from server.db.crud import update_ratings, get_ratings, get_symbol_ratings_of_user, get_all_ratings_of_user, post_submit_user_rating
+from server.db.crud import update_ratings, get_ratings, get_symbol_ratings_of_user, get_all_ratings_of_user, post_submit_user_rating, get_all_friend_ratings_of_stock
 
 class UserRating(BaseModel):
     user_email: str
@@ -220,6 +220,13 @@ async def get_all_users_ratings_db(user: str, secret_key:str="no") -> dict:
     if (secret_key == "Fat Neo"):
         return get_all_ratings_of_user(user)
     return {"error":"Unauthorized"}
+
+@router.get("/stocks/getallfriendsratings/{symbol}")
+async def get_all_friends_ratings_db(symbol: str, user_email:str = "anon@anon.com", secret_key:str="no") -> dict:
+    if (secret_key == "Fat Neo"):
+        return get_all_friend_ratings_of_stock(symbol,user_email)
+    return {"error":"Unauthorized"}
+
 
 @router.put("/stocks/setratings/{symbol}")
 async def set_stock_ratings_db(symbol: str, user:str="anon@anon.com",secret_key:str="no", ratings:int = 0) -> dict:
