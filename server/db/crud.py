@@ -68,7 +68,13 @@ def get_all_ratings_of_user(user_email):
     if r:
         my_arr = []
         for i in r:
-            my_arr.append({'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created})
+            curr_px=0
+            try:
+                t = Stock(i.symbol)
+                curr_px = t.price
+            except:
+                curr_px = 0
+            my_arr.append({'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px})
         session.close()
         return {"user_list":my_arr}
     else:
