@@ -11,6 +11,11 @@ def get_db():
     finally:
         db.close()
 
+def post_submit_user_rating(my_dict):
+    print(my_dict)
+    return update_ratings(my_dict['symbol'],my_dict['user_email'],my_dict['ratings'])
+
+
 def update_ratings(my_symbol,user,user_ratings):
     my_symbol = my_symbol.upper()
     session = SessionLocal()
@@ -32,6 +37,7 @@ def update_ratings(my_symbol,user,user_ratings):
         change = user_ratings - r.ratings
         r = create_ratings(my_symbol,u.email,user_ratings,curr_px, change)
     session.close()
+    return {"result":"success"}
 
 
 def get_ratings(symbol):

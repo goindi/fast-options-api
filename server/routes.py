@@ -1,13 +1,21 @@
 from fastapi import APIRouter, Body
 from fastapi.encoders import jsonable_encoder
+from typing import Optional
 
+from pydantic import BaseModel
 
 from datetime import datetime
 from server.calc_module import range_data_from_symbol, best_call_trades, best_put_trades, get_gamma_squeeze, get_current_stock_details
 from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume, best_put_protection
 from server.calc_module import  crypto_range_data_from_symbol, stock_returns, brad_calls , update_stock_likes, get_stock_likes
 from server.twitter_sentiment import find_twitter_sentiment
-from server.db.crud import update_ratings, get_ratings, get_symbol_ratings_of_user, get_all_ratings_of_user
+from server.db.crud import update_ratings, get_ratings, get_symbol_ratings_of_user, get_all_ratings_of_user, post_submit_user_rating
+
+class UserRating(BaseModel):
+    user_email: str
+    symbol:str
+    ratings: int
+    key:str
 
 tags_metadata = [
     {
@@ -222,6 +230,12 @@ async def set_stock_ratings_db(symbol: str, user:str="anon@anon.com",secret_key:
 @router.get("/sentiment/twitter/{symbol}")
 async def get_twitter_sentiments_details(symbol: str, num_of_tweets:int=10) -> dict:
     return find_twitter_sentiment(symbol,num_of_tweets)
+
+@router.post("/user/rating/")
+async def post_user_rating(rating: UserRating) -> dict:
+    if (rating.key == "Fat Neo"):
+        return post_submit_user_rating(rating.dict())
+    return {"error":"Unauthorized"}
 
 @router.get("/crypto/range/{symbol}")
 async def get_range_data(symbol: str, days:int = 7, sigma:float = 1.15) -> dict:
