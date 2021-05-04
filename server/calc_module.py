@@ -565,6 +565,10 @@ def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
         n_days_sigma = std_dev*math.sqrt(n_days)
         high_slope,high_intercept = np.polyfit(range(1,len(h)+1),h.High*10/h.High.mean(),1)
         low_slope,low_intercept = np.polyfit(range(1,len(h)+1),h.Low*10/h.Low.mean(),1)
+        st = y.history(interval='5m', period='1d')
+        high_slope_st,high_intercept_st = np.polyfit(range(1,len(st)+1),st.High*10/st.High.mean(),1)
+        low_slope_st,low_intercept_st = np.polyfit(range(1,len(st)+1),st.Low*10/st.Low.mean(),1)
+
         return_dict["symbol"] = symbol
         return_dict["desc"] = info['shortName']
         return_dict["price"] = curr_px
@@ -575,6 +579,9 @@ def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
         return_dict["avg_10d_volume"] = info["averageVolume10days"]
         return_dict["high_slope"] = high_slope
         return_dict["low_slope"] = low_slope
+        return_dict["high_slope_st"] = high_slope_st
+        return_dict["low_slope_st"] = low_slope_st
+
         r.hset(f'{symbol}|cryptorange|{n_days}|{sigma}','time',datetime.utcnow().strftime('%s'))
         r.hset(f'{symbol}|cryptorange|{n_days}|{sigma}','value',str(return_dict))
         return return_dict
@@ -684,13 +691,13 @@ def update_stock_likes(symbol,vote_val):
 def get_stock_likes(symbol):
 
     symbol = symbol.upper()
-    return_dict =  {"up":0, "down":0}  
+    return_dict =  {"up":0, "down":0}
     if r.exists(f"{symbol}|votes"):
-        return_dict = {"up":r.hget(f"{symbol}|votes","up"), "down":r.hget(f"{symbol}|votes","down")}  
+        return_dict = {"up":r.hget(f"{symbol}|votes","up"), "down":r.hget(f"{symbol}|votes","down")}
     return return_dict
-        
-    
-    
+
+
+
 def is_cache_good(cache_key, cache_timeout = CACHE_TIMEOUT ):
     cache_timeout = CACHE_TIMEOUT + randint(1,400)
     d1 = datetime.now()
