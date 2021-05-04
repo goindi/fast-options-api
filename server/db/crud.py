@@ -3,6 +3,8 @@ from server.db.database import engine, SessionLocal
 from server.db.models import User, Rating
 from sqlalchemy.sql import func
 from wallstreet import Stock
+from server.calc_module import is_cache_good
+from datetime import datetime
 
 def get_db():
     db = SessionLocal()
@@ -69,11 +71,16 @@ def get_all_ratings_of_user(user_email):
         my_arr = []
         for i in r:
             curr_px=0
-            # try:
-            #     t = Stock(i.symbol)
-            #     curr_px = t.price
-            # except:
-            #     curr_px = 0
+            if is_cache_good(f'{i.symbol}|crud'):
+                curr_px = ast.literal_eval(r.hget(f'{i.symbol}|crud','value'))
+            else:
+                try:
+                    t = Stock(i.symbol)
+                    curr_px = t.price
+                    r.hset(f'{i.symbol}|crud','time',datetime.utcnow().strftime('%s'))
+                    r.hset(f'{i.symbol}|crud','value',curr_px)
+                except:
+                    pass
             my_arr.append({'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px})
         session.close()
         return {"user_list":my_arr}
@@ -89,11 +96,16 @@ def get_all_friend_ratings_of_stock(symbol,user_email):
         my_arr = []
         for i in r:
             curr_px=0
-            # try:
-            #     t = Stock(i.symbol)
-            #     curr_px = t.price
-            # except:
-            #     curr_px = 0
+            if is_cache_good(f'{i.symbol}|crud'):
+                curr_px = ast.literal_eval(r.hget(f'{i.symbol}|crud','value'))
+            else:
+                try:
+                    t = Stock(i.symbol)
+                    curr_px = t.price
+                    r.hset(f'{i.symbol}|crud','time',datetime.utcnow().strftime('%s'))
+                    r.hset(f'{i.symbol}|crud','value',curr_px)
+                except:
+                    pass
             my_arr.append({'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px, "friend":i.user_email})
         session.close()
         return {"user_list":my_arr}
