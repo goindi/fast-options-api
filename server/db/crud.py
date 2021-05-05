@@ -127,10 +127,10 @@ def create_user(user_email,pwd="whateves"):
 
 def create_ratings(my_symbol,email,user_ratings, curr_px, change=0):
     my_symbol = my_symbol.upper()
-    r = Rating(user_email=email, symbol=my_symbol, ratings=user_ratings, curr_value = curr_px, ratings_change = change)
+    qry_set = Rating(user_email=email, symbol=my_symbol, ratings=user_ratings, curr_value = curr_px, ratings_change = change)
     session = SessionLocal()
-    session.add(r)
+    session.add(qry_set)
     session.commit()
-    session.refresh(r)
+    session.refresh(qry_set)
     session.close()
-    return r
+    return qry_set
