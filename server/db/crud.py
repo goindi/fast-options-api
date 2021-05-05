@@ -6,6 +6,7 @@ from wallstreet import Stock
 from server.calc_module import is_cache_good
 from datetime import datetime
 import redis
+import ast
 
 r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
