@@ -7,7 +7,7 @@ from server.calc_module import is_cache_good
 from datetime import datetime
 import redis
 
-redis = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
+r = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 def get_db():
     db = SessionLocal()
@@ -35,12 +35,12 @@ def update_ratings(my_symbol,user,user_ratings):
         curr_px = t.price
     except:
         curr_px = 0
-    r = session.query(Rating).filter(Rating.user_email==user).filter(Rating.symbol==my_symbol).order_by(Rating.time_created.desc()).first()
-    if not r:
-        r = create_ratings(my_symbol,u.email,user_ratings, curr_px)
+    qry_set = session.query(Rating).filter(Rating.user_email==user).filter(Rating.symbol==my_symbol).order_by(Rating.time_created.desc()).first()
+    if not qry_set:
+        qry_set = create_ratings(my_symbol,u.email,user_ratings, curr_px)
     else:
-        change = user_ratings - r.ratings
-        r = create_ratings(my_symbol,u.email,user_ratings,curr_px, change)
+        change = user_ratings - qry_set.ratings
+        qry_set = create_ratings(my_symbol,u.email,user_ratings,curr_px, change)
     session.close()
     return {"result":"success"}
 
@@ -60,19 +60,19 @@ def get_symbol_ratings_of_user(my_symbol,user_email):
     my_symbol = my_symbol.upper()
     session = SessionLocal()
     #r = session.query(func.avg(Rating.ratings).label('average')).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).scalar()
-    r = session.query(Rating).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).order_by(Rating.time_created.desc()).first()
+    qry_set = session.query(Rating).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).order_by(Rating.time_created.desc()).first()
     session.close()
-    if r:
-        return {'rating':r.ratings,"change":r.ratings_change,"saved_value":r.curr_value}
+    if qry_set:
+        return {'rating':qry_set.ratings,"change":qry_set.ratings_change,"saved_value":qry_set.curr_value}
     else:
         return {'rating':0,"change":"NA", "saved_value":0}
 
 def get_all_ratings_of_user(user_email):
     session = SessionLocal()
-    r = session.query(Rating).filter(Rating.user_email==user_email).order_by(Rating.symbol,Rating.time_created.desc()).distinct(Rating.symbol)
-    if r:
+    qry_set = session.query(Rating).filter(Rating.user_email==user_email).order_by(Rating.symbol,Rating.time_created.desc()).distinct(Rating.symbol)
+    if qry_set:
         my_arr = []
-        for i in r:
+        for i in qry_set:
             curr_px=0
             if is_cache_good(f'{i.symbol}|crud'):
                 curr_px = ast.literal_eval(r.hget(f'{i.symbol}|crud','value'))
@@ -80,8 +80,8 @@ def get_all_ratings_of_user(user_email):
                 try:
                     t = Stock(i.symbol)
                     curr_px = t.price
-                    redis.hset(f'{i.symbol}|crud','time',datetime.utcnow().strftime('%s'))
-                    redis.hset(f'{i.symbol}|crud','value',curr_px)
+                    r.hset(f'{i.symbol}|crud','time',datetime.utcnow().strftime('%s'))
+                    r.hset(f'{i.symbol}|crud','value',curr_px)
                 except:
                     pass
             my_arr.append({'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px})
@@ -94,10 +94,10 @@ def get_all_ratings_of_user(user_email):
 def get_all_friend_ratings_of_stock(symbol,user_email):
     session = SessionLocal()
     symbol = symbol.upper()
-    r = session.query(Rating).filter(Rating.symbol==symbol).order_by(Rating.user_email,Rating.time_created.desc()).distinct(Rating.user_email)
-    if r:
+    qry_set = session.query(Rating).filter(Rating.symbol==symbol).order_by(Rating.user_email,Rating.time_created.desc()).distinct(Rating.user_email)
+    if qry_set:
         my_arr = []
-        for i in r:
+        for i in qry_set:
             curr_px=0
             if is_cache_good(f'{i.symbol}|crud'):
                 curr_px = ast.literal_eval(r.hget(f'{i.symbol}|crud','value'))
@@ -105,8 +105,8 @@ def get_all_friend_ratings_of_stock(symbol,user_email):
                 try:
                     t = Stock(i.symbol)
                     curr_px = t.price
-                    redis.hset(f'{i.symbol}|crud','time',datetime.utcnow().strftime('%s'))
-                    redis.hset(f'{i.symbol}|crud','value',curr_px)
+                    r.hset(f'{i.symbol}|crud','time',datetime.utcnow().strftime('%s'))
+                    r.hset(f'{i.symbol}|crud','value',curr_px)
                 except:
                     pass
             my_arr.append({'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px, "friend":i.user_email})
