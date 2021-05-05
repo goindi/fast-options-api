@@ -5,6 +5,9 @@ from sqlalchemy.sql import func
 from wallstreet import Stock
 from server.calc_module import is_cache_good
 from datetime import datetime
+import redis
+
+redis = redis.Redis(host='localhost', port=6379, db=0, decode_responses=True)
 
 def get_db():
     db = SessionLocal()
@@ -77,8 +80,8 @@ def get_all_ratings_of_user(user_email):
                 try:
                     t = Stock(i.symbol)
                     curr_px = t.price
-                    r.hset(f'{i.symbol}|crud','time',datetime.utcnow().strftime('%s'))
-                    r.hset(f'{i.symbol}|crud','value',curr_px)
+                    redis.hset(f'{i.symbol}|crud','time',datetime.utcnow().strftime('%s'))
+                    redis.hset(f'{i.symbol}|crud','value',curr_px)
                 except:
                     pass
             my_arr.append({'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px})
@@ -102,8 +105,8 @@ def get_all_friend_ratings_of_stock(symbol,user_email):
                 try:
                     t = Stock(i.symbol)
                     curr_px = t.price
-                    r.hset(f'{i.symbol}|crud','time',datetime.utcnow().strftime('%s'))
-                    r.hset(f'{i.symbol}|crud','value',curr_px)
+                    redis.hset(f'{i.symbol}|crud','time',datetime.utcnow().strftime('%s'))
+                    redis.hset(f'{i.symbol}|crud','value',curr_px)
                 except:
                     pass
             my_arr.append({'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px, "friend":i.user_email})
