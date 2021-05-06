@@ -11,8 +11,10 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     hashed_password = Column(String)
     is_active = Column(Boolean, default=True)
+    avatar = Column(String, default="")
 
     likes = relationship("Rating", back_populates="owner")
+    #settings = relationship("Setting", back_populates="owner")
 
 
 class Rating(Base):
@@ -28,8 +30,17 @@ class Rating(Base):
 
     owner = relationship("User", back_populates="likes")
 
+# class Setting(Base):
+#     __tablename__ = "user_settings"
+#
+#     id = Column(Integer, primary_key=True, index=True)
+#     avatar = Column(String, default="")
+#     user_email = Column(String, ForeignKey("users.email"))
+#
+#     owner = relationship("User", back_populates="likes")
 #User.__table__.create(bind=engine, checkfirst=True)
 #Rating.__table__.create(bind=engine, checkfirst=True)
+#Setting.__table__.create(bind=engine, checkfirst=True)
 #
 #session = SessionLocal()
 #u = User(email="foo@bar.com", hashed_password="cc")
