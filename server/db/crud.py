@@ -76,7 +76,7 @@ def get_avatar(user_email):
     if user:
         return {'avatar':user.avatar}
     else:
-        return {'avatar':"{'skinColor':'Tanned','hairColor':'Brown','facialHairType':'Blank','topType':'ShortHairShortFlat'}"}
+        return {'avatar':'{"skinColor":"Tanned","hairColor":"Brown","facialHairType":"Blank","topType":"ShortHairShortFlat"}'}
 
 def update_avatar(user_email,avatar_dict):
     session = SessionLocal()
@@ -141,7 +141,7 @@ def get_all_friend_ratings_of_stock(symbol,user_email):
 def create_user(user_email,pwd="whateves"):
     if not user_email:
         user_email='anon@anon.com'
-    default_avatar = "{'skinColor':'Tanned','hairColor':'Brown','facialHairType':'Blank','topType':'ShortHairShortFlat'}"
+    default_avatar = '{"skinColor":"Tanned","hairColor":"Brown","facialHairType":"Blank","topType":"ShortHairShortFlat"}'
     u = User(email=user_email, hashed_password=pwd, avatar=default_avatar)
     session = SessionLocal()
     session.add(u)
