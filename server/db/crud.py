@@ -76,7 +76,7 @@ def get_avatar(user_email):
     if user:
         return {'avatar':user.avatar}
     else:
-        return {'avatar':"{'skinColor';'Tanned','hairColor':'Brown','facialHairType':'Blank','topType':'ShortHairShortFlat'}"}
+        return {'avatar':"{'skinColor':'Tanned','hairColor':'Brown','facialHairType':'Blank','topType':'ShortHairShortFlat'}"}
 
 def update_avatar(user_email,avatar_dict):
     session = SessionLocal()
