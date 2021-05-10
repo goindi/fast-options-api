@@ -118,7 +118,7 @@ def get_all_ratings_of_user(user_email):
                     r.hset(f'{i.symbol}|crud','value',curr_px)
                 except:
                     pass
-            my_arr.append({'id':i.id,'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px})
+            my_arr.append({'id':i.id,'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px, 'is_hidden':i.is_hidden})
         session.close()
         return {"user_list":my_arr}
     else:
