@@ -9,12 +9,17 @@ from server.calc_module import range_data_from_symbol, best_call_trades, best_pu
 from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume, best_put_protection
 from server.calc_module import  crypto_range_data_from_symbol, stock_returns, brad_calls , update_stock_likes, get_stock_likes
 from server.twitter_sentiment import find_twitter_sentiment
-from server.db.crud import update_ratings, get_ratings, get_symbol_ratings_of_user, get_all_ratings_of_user, post_submit_user_rating, get_all_friend_ratings_of_stock
+from server.db.crud import update_ratings, get_ratings, get_symbol_ratings_of_user, get_all_ratings_of_user, post_submit_user_rating, get_all_friend_ratings_of_stock, post_toggle_user_rating
 
 class UserRating(BaseModel):
     user_email: str
     symbol:str
     ratings: int
+    key:str
+
+class UserRatingToggle(BaseModel):
+    user_email: str
+    id:int
     key:str
 
 tags_metadata = [
@@ -243,6 +248,14 @@ async def post_user_rating(rating: UserRating) -> dict:
     if (rating.key == "Fat Neo"):
         return post_submit_user_rating(rating.dict())
     return {"error":"Unauthorized"}
+
+@router.post("/user/rating/toggle")
+async def post_user_rating_toggle(rating_toggle: UserRatingToggle) -> dict:
+    if (rating_toggle.key == "Fat Neo"):
+        return post_toggle_user_rating(rating_toggle.dict())
+    return {"error":"Unauthorized"}
+
+
 
 @router.get("/crypto/range/{symbol}")
 async def get_range_data(symbol: str, days:int = 7, sigma:float = 1.15) -> dict:

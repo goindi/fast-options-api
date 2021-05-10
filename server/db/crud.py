@@ -18,8 +18,20 @@ def get_db():
         db.close()
 
 def post_submit_user_rating(my_dict):
-    print(my_dict)
     return update_ratings(my_dict['symbol'],my_dict['user_email'],my_dict['ratings'])
+
+def post_toggle_user_rating(my_dict):
+    session = SessionLocal()
+    qry_set = session.query(Rating).filter(Rating.user_email==my_dict['user_email']).filter(Rating.id==my_dict['id']).first()
+    if qry_set:
+        if qry_set.is_hidden:
+            qry_set.is_hidden = False
+        else:
+            qry_set.is_hidden = True
+        session.commit()
+        return {"result":"success"}
+    return {"result":"failure"}
+
 
 
 def update_ratings(my_symbol,user,user_ratings):
@@ -85,7 +97,7 @@ def get_all_ratings_of_user(user_email):
                     r.hset(f'{i.symbol}|crud','value',curr_px)
                 except:
                     pass
-            my_arr.append({'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px})
+            my_arr.append({'id':i.id,'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px})
         session.close()
         return {"user_list":my_arr}
     else:

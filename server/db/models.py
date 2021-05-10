@@ -25,6 +25,7 @@ class Rating(Base):
     curr_value = Column(Float, default=0)
     user_email = Column(String, ForeignKey("users.email"))
     time_created = Column(DateTime(timezone=False), server_default=func.now())
+    is_hidden = Column(Boolean, default=False)
 
     owner = relationship("User", back_populates="likes")
 
