@@ -9,7 +9,7 @@ from server.calc_module import range_data_from_symbol, best_call_trades, best_pu
 from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume, best_put_protection
 from server.calc_module import  crypto_range_data_from_symbol, stock_returns, brad_calls , update_stock_likes, get_stock_likes
 from server.twitter_sentiment import find_twitter_sentiment
-from server.db.crud import update_ratings, get_ratings, get_symbol_ratings_of_user, get_all_ratings_of_user, post_submit_user_rating, get_all_friend_ratings_of_stock, post_toggle_user_rating
+from server.db.crud import update_ratings, get_ratings, get_symbol_ratings_of_user, get_all_ratings_of_user, post_submit_user_rating, get_all_friend_ratings_of_stock,update_avatar,get_avatar, post_toggle_user_rating
 
 class UserRating(BaseModel):
     user_email: str
@@ -17,10 +17,17 @@ class UserRating(BaseModel):
     ratings: int
     key:str
 
+
 class UserRatingToggle(BaseModel):
     user_email: str
     id:int
     key:str
+
+class Avatar(BaseModel):
+    user_email: str
+    avatar:str
+
+
 
 tags_metadata = [
     {
@@ -249,12 +256,25 @@ async def post_user_rating(rating: UserRating) -> dict:
         return post_submit_user_rating(rating.dict())
     return {"error":"Unauthorized"}
 
+
 @router.post("/user/rating/toggle")
 async def post_user_rating_toggle(rating_toggle: UserRatingToggle) -> dict:
     if (rating_toggle.key == "Fat Neo"):
         return post_toggle_user_rating(rating_toggle.dict())
     return {"error":"Unauthorized"}
 
+
+@router.get("/user/avatar/")
+async def get_user_avatar(user_email:str, secret_key:str="no") -> dict:
+    if (secret_key == "Fat Neo"):
+        return get_avatar(user_email)
+    return {"error":"Unauthorized"}
+
+@router.post("/user/update_avatar/")
+async def post_user_avatar(avatar: Avatar) -> dict:
+    if (avatar.key == "Fat Neo"):
+        return update_avatar(avatar.user_email, avatar.avatar)
+    return {"error":"Unauthorized"}
 
 
 @router.get("/crypto/range/{symbol}")

@@ -80,6 +80,27 @@ def get_symbol_ratings_of_user(my_symbol,user_email):
     else:
         return {'rating':0,"change":"NA", "saved_value":0}
 
+def get_avatar(user_email):
+    session = SessionLocal()
+    #r = session.query(func.avg(Rating.ratings).label('average')).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).scalar()
+    user = session.query(User).filter(User.email==user_email).first()
+    session.close()
+    if user:
+        return {'avatar':user.avatar}
+    else:
+        return {'avatar':'{"skinColor":"Tanned","hairColor":"Brown","facialHairType":"Blank","topType":"ShortHairShortFlat"}'}
+
+def update_avatar(user_email,avatar_dict):
+    session = SessionLocal()
+    #r = session.query(func.avg(Rating.ratings).label('average')).filter(Rating.user_email==user_email).filter(Rating.symbol==my_symbol).scalar()
+    user = session.query(User).filter(User.email==user_email).first()
+    if not user:
+        user = create_user(user_email)
+    user.avatar = avatar_dict
+    session.commit()
+    session.close()
+    return {'avatar':"successfully updated"}
+
 def get_all_ratings_of_user(user_email):
     session = SessionLocal()
     qry_set = session.query(Rating).filter(Rating.user_email==user_email).order_by(Rating.symbol,Rating.time_created.desc()).distinct(Rating.symbol)
@@ -122,7 +143,7 @@ def get_all_friend_ratings_of_stock(symbol,user_email):
                     r.hset(f'{i.symbol}|crud','value',curr_px)
                 except:
                     pass
-            my_arr.append({'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px, "friend":i.user_email})
+            my_arr.append({'symbol':i.symbol,'rating':[i.ratings],'timestamp':i.time_created,'px_at_save':i.curr_value,'px_now':curr_px, "friend":i.user_email, 'avatar':i.owner.avatar})
         session.close()
         return {"user_list":my_arr}
     else:
@@ -130,7 +151,10 @@ def get_all_friend_ratings_of_stock(symbol,user_email):
         return {"error":"no entry"}
 
 def create_user(user_email,pwd="whateves"):
-    u = User(email=user_email, hashed_password=pwd)
+    if not user_email:
+        user_email='anon@anon.com'
+    default_avatar = '{"skinColor":"Tanned","hairColor":"Brown","facialHairType":"Blank","topType":"ShortHairShortFlat"}'
+    u = User(email=user_email, hashed_password=pwd, avatar=default_avatar)
     session = SessionLocal()
     session.add(u)
     session.commit()
