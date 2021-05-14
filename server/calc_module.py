@@ -535,7 +535,7 @@ def get_option_limit_price(symbol:str, pc:str, strike_hint:float, n_days:int):
         st = y.history(interval='5m', period='1d')
         stock_move = (max(st.High)-min(st.Low))/2
         option_move = my_delta*stock_move
-        return_dict =  {'symbol':symbol, 'pc':pc, 'strike':strike_to_use, 'expiry':expiry, 'delta':my_delta,'option_move':option_move}
+        return_dict =  {'symbol':symbol, 'pc':pc, 'strike':strike_to_use, 'bid':my_option.bid,'ask':my_option.ask,'last':my_option.price, 'expiry':expiry, 'delta':my_delta,'option_move':option_move}
         r.hset(f'{symbol}|{pc}|{n_days}|{strike_hint}','time',datetime.utcnow().strftime('%s'))
         r.hset(f'{symbol}|{pc}|{n_days}|{strike_hint}','value',str(return_dict))
         return return_dict
