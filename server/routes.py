@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from server.calc_module import range_data_from_symbol, best_call_trades, best_put_trades, get_gamma_squeeze, get_current_stock_details
 from server.calc_module import prob_move_pct, prob_move_sigma, implied_forward, amt_to_invest, div_details, stock_volume, best_put_protection
-from server.calc_module import  crypto_range_data_from_symbol, stock_returns, brad_calls , update_stock_likes, get_stock_likes
+from server.calc_module import  crypto_range_data_from_symbol, stock_returns, brad_calls , update_stock_likes, get_stock_likes, get_option_limit_price
 from server.twitter_sentiment import find_twitter_sentiment
 from server.db.crud import update_ratings, get_ratings, get_symbol_ratings_of_user, get_all_ratings_of_user, post_submit_user_rating, get_all_friend_ratings_of_stock,update_avatar,get_avatar, post_toggle_user_rating
 
@@ -160,6 +160,10 @@ async def get_my_call_trades(symbol: str, days:int = 7) -> dict:
 @router.get("/options/put_trades/{symbol}")
 async def get_my_put_trades(symbol: str, days:int = 7) -> dict:
     return best_put_trades(symbol, days)
+
+@router.get("/options/limit/{symbol}/{pc}/{strike}")
+async def get_my_option_limit(symbol: str,pc:str, strike:float, days:int = 7) -> dict:
+    return get_option_limit_price(symbol, pc, strike, days)
 
 @router.get("/options/put_protection/{symbol}")
 async def get_my_put_protection(symbol: str, days:int = 7) -> dict:

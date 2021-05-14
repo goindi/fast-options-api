@@ -509,6 +509,39 @@ def best_put_protection(symbol, num_of_days):
     except:
         return {"error":"No options were found"}
 
+def get_option_limit_price(symbol:str, pc:str, strike_hint:float, n_days:int):
+    symbol = symbol.upper()
+    pc = pc.upper()
+    print(f'{symbol}|{pc}|{n_days}|{strike_hint}')
+    if is_cache_good(f'{symbol}|{pc}|{n_days}|{strike_hint}', CACHE_TIMEOUT):
+        return ast.literal_eval(r.hget(f'{symbol}|{pc}|{n_days}|{strike_hint}','value'))
+    try:
+        exp_dict = get_expiries_bracket(symbol, n_days)
+        expiry_to_use = exp_dict['longer_expiry']
+        if exp_dict['shorter_weight'] > 0.5:
+            expiry_to_use = exp_dict['shorter_expiry']
+        y = yf.Ticker(symbol)
+        expiry = f'{expiry_to_use[6:10]}-{expiry_to_use[3:5]}-{expiry_to_use[0:2]}'
+        o = y.option_chain(date=expiry)
+        strike_dict = get_strike_bracket(o.calls.strike.tolist(), strike_hint)
+        strike_to_use = strike_dict['higher_strike']
+        if strike_dict['lower_weight'] > 0.5:
+            expiry_to_use = exp_dict['lower_strike']
+        my_option = Put(symbol,d=int(expiry_to_use[0:2]),m=int(expiry_to_use[3:5]),y=int(expiry_to_use[6:10]))
+        if pc == "C":
+            my_option = Call(symbol,d=int(expiry_to_use[0:2]),m=int(expiry_to_use[3:5]),y=int(expiry_to_use[6:10]))
+        my_option.set_strike(strike_to_use)
+        my_delta = my_option.delta()
+        st = y.history(interval='5m', period='1d')
+        stock_move = (max(st.High)-min(st.Low))/2
+        option_move = my_delta*stock_move
+        return_dict =  {'symbol':symbol, 'pc':pc, 'strike':strike_to_use, 'expiry':expiry, 'delta':my_delta,'option_move':option_move}
+        r.hset(f'{symbol}|{pc}|{n_days}|{strike_hint}','time',datetime.utcnow().strftime('%s'))
+        r.hset(f'{symbol}|{pc}|{n_days}|{strike_hint}','value',str(return_dict))
+        return return_dict
+    except:
+        return {"error":"No options were found"}
+
 def amt_to_invest(symbol:str,n_days:int):
     symbol=symbol.upper()
     if is_cache_good(f'{symbol}|kelly|{n_days}'):
@@ -750,6 +783,9 @@ def get_current_stock_details(symbol:str):
     r.hset(symbol,'time',datetime.utcnow().strftime('%s'))
     r.hset(symbol,'value',str(return_dict))
     return return_dict
+
+
+
 
 def brad_calls():
     BRAD_LIST = ["ABBV","GILD","GME","IBM", "MO", "T", "XOM"]
