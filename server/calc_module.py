@@ -523,7 +523,20 @@ def get_option_limit_price(symbol:str, pc:str, strike_hint:float, n_days:int):
         y = yf.Ticker(symbol)
         expiry = f'{expiry_to_use[6:10]}-{expiry_to_use[3:5]}-{expiry_to_use[0:2]}'
         o = y.option_chain(date=expiry)
+        p = o.puts
+        chart_list = list()
+        p_strike = p.strike.tolist()
+        p_ivol = p.impliedVolatility.tolist()
+        for i in range(0,len(p_strike)):
+            chart_list.append({"group":"put","ivol":p_ivol[i],"strike":p_strike[i]})
+        c = o.calls
+        c_strike = c.strike.tolist()
+        c_ivol = c.impliedVolatility.tolist()
+        for i in range(0,len(c_strike)):
+            chart_list.append({"group":"call","ivol":c_ivol[i],"strike":c_strike[i]})
         strike_dict = get_strike_bracket(o.calls.strike.tolist(), strike_hint)
+        if pc == "P":
+            strike_dict = get_strike_bracket(o.puts.strike.tolist(), strike_hint)
         strike_to_use = strike_dict['higher_strike']
         if strike_dict['lower_weight'] > 0.5:
             expiry_to_use = exp_dict['lower_strike']
@@ -535,7 +548,7 @@ def get_option_limit_price(symbol:str, pc:str, strike_hint:float, n_days:int):
         st = y.history(interval='5m', period='1d')
         stock_move = (max(st.High)-min(st.Low))/2
         option_move = my_delta*stock_move
-        return_dict =  {'symbol':symbol, 'pc':pc, 'strike':strike_to_use, 'bid':my_option.bid,'ask':my_option.ask,'last':my_option.price, 'expiry':expiry, 'delta':my_delta,'option_move':option_move}
+        return_dict =  {'symbol':symbol, 'pc':pc, 'strike':strike_to_use, 'bid':my_option.bid,'ask':my_option.ask,'last':my_option.price, 'expiry':expiry, 'delta':my_delta,'option_move':option_move,'chart_data':chart_list}
         r.hset(f'{symbol}|{pc}|{n_days}|{strike_hint}','time',datetime.utcnow().strftime('%s'))
         r.hset(f'{symbol}|{pc}|{n_days}|{strike_hint}','value',str(return_dict))
         return return_dict
