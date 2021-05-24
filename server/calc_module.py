@@ -615,12 +615,19 @@ def crypto_range_data_from_symbol(symbol:str,n_days:int,sigma:float):
         high_slope_st,high_intercept_st = np.polyfit(range(1,len(st)+1),st.High*10/st.High.mean(),1)
         low_slope_st,low_intercept_st = np.polyfit(range(1,len(st)+1),st.Low*10/st.Low.mean(),1)
 
+        my_df_st = st.Close
+        st_sigma = np.std(my_df_st)*math.sqrt(len(my_df_st))
+        
+
+
         return_dict["symbol"] = symbol
         return_dict["desc"] = info['shortName']
         return_dict["price"] = curr_px
         return_dict["ivol"] = std_dev # realized vol.
         return_dict["low_range"] = curr_px - n_days_sigma*sigma
         return_dict["high_range"] = curr_px + n_days_sigma*sigma
+        return_dict["low_range_st"] = curr_px - st_sigma*sigma
+        return_dict["high_range_st"] = curr_px + st_sigma*sigma
         return_dict["today_volume"] =info['volume24Hr']
         return_dict["avg_10d_volume"] = info["averageVolume10days"]
         return_dict["high_slope"] = high_slope
